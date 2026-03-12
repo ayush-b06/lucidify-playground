@@ -1,12 +1,16 @@
+"use client";
+
 import { useEffect, useRef, useState } from 'react';
 import { getAuth } from 'firebase/auth';
-import { addDoc, collection, doc, getDoc, getDocs, onSnapshot, orderBy, query, Timestamp, updateDoc } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
-import { auth, db } from '../firebaseConfig'; // Firestore instance
+import {
+    addDoc, collection, doc, getDoc, getDocs, increment,
+    onSnapshot, orderBy, query, Timestamp, updateDoc
+} from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig';
 import DashboardClientSideNav from './DashboardClientSideNav';
 import Image from 'next/image';
 import Link from 'next/link';
-import CreateProjectPopup from './CreateProjectPopup';
+import AddDirectMessageModal from './AddDirectMessageModal';
 
 interface Message {
     id: string;
@@ -15,560 +19,575 @@ interface Message {
     timestamp: Timestamp;
 }
 
-interface Conversation {
-    id: string;
+// Unified conversation entry for sidebar
+interface ConvoItem {
+    id: string;          // for Lucidify: conversation doc id; for DM: directMessages convoId
+    type: 'lucidify' | 'direct';
     title: string;
+    avatarSrc: string | null; // null = show initials
     isPinned: boolean;
-    timestamp: Timestamp;
+    timestamp: Timestamp | null;
     lastMessage: string;
-    lastMessageSender: string;
-    lastSeen: string;
-    unreadCounts: Record<string, number>; // 🔑 replaces unreadMessagesCount
+    unreadCount: number;
+    otherUserId?: string; // only for DMs
 }
 
-
 const DASHBOARDClientMessages = () => {
-    const router = useRouter();
-    const [conversations, setConversations] = useState<Conversation[]>([]); // List of conversations
-    const [messages, setMessages] = useState<Message[]>([]); // Messages in the currently selected conversation
-    const [selectedChat, setSelectedChat] = useState<string>('Lucidify'); // Initially set to 'Lucidify'
-    const [newMessage, setNewMessage] = useState<string>('');
-    const [selectedAvatar, setSelectedAvatar] = useState<string | null>(null); // 🔑 new state
-    const [searchQuery, setSearchQuery] = useState<string>('');
-    const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
-
     const authInstance = getAuth();
 
-    // 🔑 Fetch user profile (for avatar, etc.)
-    useEffect(() => {
-        const fetchUserAvatar = async () => {
-            const user = authInstance.currentUser;
-            if (!user) return;
-
-            try {
-                const userRef = doc(db, "users", user.uid);
-                const userSnap = await getDoc(userRef);
-
-                if (userSnap.exists()) {
-                    const data = userSnap.data();
-                    setSelectedAvatar(data.selectedAvatar || null); // Save avatar if it exists
-                }
-            } catch (error) {
-                console.error("Error fetching user avatar:", error);
-            }
-        };
-
-        fetchUserAvatar();
-    }, [authInstance]);
-
-    useEffect(() => {
-        const fetchConversations = async () => {
-            const userId = auth.currentUser?.uid;
-            if (!userId) return;
-
-            const conversationsRef = collection(db, 'users', userId, 'conversations');
-            const conversationsSnapshot = await getDocs(conversationsRef);
-
-            const convos = conversationsSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Conversation[];
-            setConversations(convos);
-
-            // Select 'Lucidify' chat if exists
-            const lucidifyChat = convos.find(convo => convo.title === 'Lucidify');
-            if (lucidifyChat) {
-                setSelectedChat(lucidifyChat.id);
-                fetchMessages(lucidifyChat.id);
-
-                // 🔹 Reset unread messages for this user
-                const convoRef = doc(db, "users", userId, "conversations", lucidifyChat.id);
-                await updateDoc(convoRef, {
-                    [`unreadCounts.${userId}`]: 0,
-                });
-
-                // Update local state immediately
-                setConversations(prevConvos =>
-                    prevConvos.map(convo =>
-                        convo.id === lucidifyChat.id
-                            ? {
-                                ...convo,
-                                unreadCounts: {
-                                    ...convo.unreadCounts,
-                                    [userId]: 0,
-                                },
-                            }
-                            : convo
-                    )
-                );
-            }
-        };
-
-        fetchConversations();
-    }, []);
-
-
-    // Fetch messages for the selected conversation
-    const fetchMessages = async (conversationName: string) => {
-        const userId = auth.currentUser?.uid;
-        if (!userId) return; // Return early if no user is logged in
-        const messagesRef = collection(db, 'users', userId, 'conversations', conversationName, "messages");
-        const q = query(messagesRef, orderBy("timestamp", "asc"));
-        const messagesSnapshot = await getDocs(q);
-
-        const fetchedMessages = messagesSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        })) as Message[];
-        setMessages(fetchedMessages);
-    };
-
-    // Fetch messages for the selected conversation
-    useEffect(() => {
-        if (selectedChat) {
-            const fetchMessages = async (conversationName: string) => {
-                const userId = authInstance.currentUser?.uid;
-                if (!userId) return; // Return early if no user is logged in
-                const messagesRef = collection(db, 'users', userId, 'conversations', selectedChat, 'messages');
-                const q = query(messagesRef, orderBy("timestamp", "asc"));
-
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const messagesList = snapshot.docs.map(doc => ({
-                        id: doc.id,
-                        ...doc.data(),
-                    })) as Message[];
-                    setMessages(messagesList);
-                });
-
-                return () => unsubscribe(); // Clean up listener on unmount
-            };
-
-            fetchMessages(selectedChat);
-        }
-    }, [selectedChat, authInstance]);
-
-    // Update messages when a new chat is selected
-    const handleChatSelect = async (conversationId: string) => {
-        setSelectedChat(conversationId); // Set the conversation to the selected one
-        fetchMessages(conversationId); // Fetch messages for the selected conversation
-        setMobileView('chat');
-
-        const user = authInstance.currentUser;
-        if (!user) return;
-
-        const convoRef = doc(db, "users", user.uid, "conversations", conversationId);
-
-        // Reset the client's unread count
-        await updateDoc(convoRef, {
-            [`unreadCounts.${user.uid}`]: 0,
-        });
-
-        // Also update local state immediately
-        setConversations((prevConvos) =>
-            prevConvos.map((convo) =>
-                convo.id === conversationId
-                    ? {
-                        ...convo,
-                        unreadCounts: {
-                            ...convo.unreadCounts,
-                            [user.uid]: 0,
-                        },
-                    }
-                    : convo
-            )
-        );
-    };
-
-
-    // Send new message
-    const sendMessage = async () => {
-        if (newMessage.trim() === '') return;
-
-        const user = authInstance.currentUser;
-        if (!user || !selectedConversation) return;
-
-        const newTimestamp = Timestamp.fromDate(new Date());
-
-        const messageData = {
-            text: newMessage,
-            sender: user.uid,
-            timestamp: newTimestamp,
-            isRead: false
-        };
-
-        // 1. Add message
-        await addDoc(
-            collection(db, "users", user.uid, "conversations", selectedChat, "messages"),
-            messageData
-        );
-
-        // 2. Update conversation metadata
-        const convoRef = doc(db, "users", user.uid, "conversations", selectedChat);
-
-        const updatedUnreadCounts = {
-            ...selectedConversation.unreadCounts,
-            Lucidify: (selectedConversation.unreadCounts?.Lucidify || 0) + 1 // 🔑 increment admin's count
-        };
-
-        await updateDoc(convoRef, {
-            lastMessage: newMessage,
-            lastMessageSender: user.uid,
-            timestamp: newTimestamp,
-            unreadCounts: updatedUnreadCounts,
-        });
-
-        // 3. Update local state
-        setConversations((prevConvos) =>
-            prevConvos.map((convo) =>
-                convo.id === selectedChat
-                    ? {
-                        ...convo,
-                        lastMessage: newMessage,
-                        lastMessageSender: user.uid,
-                        timestamp: newTimestamp,
-                        unreadCounts: updatedUnreadCounts,
-                    }
-                    : convo
-            )
-        );
-
-        setNewMessage('');
-    };
-
-
-
-    const chunkMessagesBySender = (messages: Message[]) => {
-        const groupedMessages: Message[][] = [];
-        let currentGroup: Message[] = [];
-
-        messages.forEach((message, index) => {
-            if (index === 0 || message.sender !== messages[index - 1].sender) {
-                if (currentGroup.length > 0) {
-                    groupedMessages.push(currentGroup);
-                }
-                currentGroup = [message];
-            } else {
-                currentGroup.push(message);
-            }
-        });
-
-        if (currentGroup.length > 0) {
-            groupedMessages.push(currentGroup);
-        }
-
-        return groupedMessages;
-    };
-
-    const groupedMessages = chunkMessagesBySender(messages);
-
-    // Helper function to format the Firestore timestamp
-    const formatTimestamp = (timestamp: Timestamp) => {
-        if (timestamp instanceof Timestamp) {
-            const date = timestamp.toDate(); // Converts Firestore Timestamp to JS Date
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Format the time as HH:MM
-        }
-        return '1:08'; // Fallback time if there's no valid timestamp
-    };
-
-    const selectedConversation = conversations.find(convo => convo.id === selectedChat);
-
-    const filteredConversations = conversations.filter(convo =>
-        convo.title?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const [convos, setConvos] = useState<ConvoItem[]>([]);
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [newMessage, setNewMessage] = useState('');
+    const [myAvatar, setMyAvatar] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
+    const [isDMModalOpen, setIsDMModalOpen] = useState(false);
 
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
+    // ── Fetch my profile ──────────────────────────────────────────────────────
     useEffect(() => {
-        // Scroll to the bottom whenever groupedMessages change
+        const fetchMyProfile = async () => {
+            const user = authInstance.currentUser;
+            if (!user) return;
+            try {
+                const snap = await getDoc(doc(db, 'users', user.uid));
+                if (snap.exists()) {
+                    const data = snap.data();
+                    setMyAvatar(data.selectedAvatar || null);
+                    // Ensure email is saved to Firestore (needed for DM search)
+                    if (!data.email && user.email) {
+                        await updateDoc(doc(db, 'users', user.uid), { email: user.email });
+                    }
+                }
+            } catch (e) { console.error(e); }
+        };
+        fetchMyProfile();
+    }, [authInstance]);
+
+    // ── Load all conversations (Lucidify + DMs) ───────────────────────────────
+    const loadConversations = async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        const items: ConvoItem[] = [];
+
+        // 1. Lucidify conversations
+        try {
+            const snap = await getDocs(collection(db, 'users', user.uid, 'conversations'));
+            snap.forEach(d => {
+                const data = d.data();
+                items.push({
+                    id: d.id,
+                    type: 'lucidify',
+                    title: data.title || 'Lucidify',
+                    avatarSrc: null,
+                    isPinned: data.isPinned || false,
+                    timestamp: data.timestamp || null,
+                    lastMessage: data.lastMessage || '',
+                    unreadCount: data.unreadCounts?.[user.uid] || 0,
+                });
+            });
+        } catch (e) { console.error(e); }
+
+        // 2. DM conversations
+        try {
+            const dmRefsSnap = await getDocs(collection(db, 'users', user.uid, 'dmConversations'));
+            for (const ref of dmRefsSnap.docs) {
+                const convoId = ref.id;
+                const otherUserId = ref.data().otherUserId;
+                try {
+                    const dmSnap = await getDoc(doc(db, 'directMessages', convoId));
+                    if (!dmSnap.exists()) continue;
+                    const dm = dmSnap.data();
+                    const otherProfile = dm.participantProfiles?.[otherUserId] || {};
+                    const displayName = otherProfile.firstName
+                        ? `${otherProfile.firstName} ${otherProfile.lastName || ''}`.trim()
+                        : 'Unknown';
+                    items.push({
+                        id: convoId,
+                        type: 'direct',
+                        title: displayName,
+                        avatarSrc: otherProfile.selectedAvatar || null,
+                        isPinned: false,
+                        timestamp: dm.timestamp || null,
+                        lastMessage: dm.lastMessage || '',
+                        unreadCount: dm.unreadCounts?.[user.uid] || 0,
+                        otherUserId,
+                    });
+                } catch (e) { console.error(e); }
+            }
+        } catch (e) { console.error(e); }
+
+        // Sort by timestamp desc
+        items.sort((a, b) => {
+            if (a.isPinned && !b.isPinned) return -1;
+            if (!a.isPinned && b.isPinned) return 1;
+            const ta = a.timestamp?.toMillis() || 0;
+            const tb = b.timestamp?.toMillis() || 0;
+            return tb - ta;
+        });
+
+        setConvos(items);
+
+        // Auto-select first (Lucidify) if nothing selected
+        const lucidify = items.find(c => c.type === 'lucidify');
+        if (lucidify && !selectedId) {
+            setSelectedId(lucidify.id);
+            selectConversation(lucidify);
+        }
+    };
+
+    useEffect(() => { loadConversations(); }, []);
+
+    // ── Select a conversation (mark read + fetch messages) ───────────────────
+    const selectConversation = async (convo: ConvoItem) => {
+        setSelectedId(convo.id);
+        setMobileView('chat');
+        const user = auth.currentUser;
+        if (!user) return;
+
+        // Reset unread count
+        try {
+            if (convo.type === 'lucidify') {
+                await updateDoc(doc(db, 'users', user.uid, 'conversations', convo.id), {
+                    [`unreadCounts.${user.uid}`]: 0,
+                });
+            } else {
+                await updateDoc(doc(db, 'directMessages', convo.id), {
+                    [`unreadCounts.${user.uid}`]: 0,
+                });
+            }
+        } catch (e) { /* ignore */ }
+
+        setConvos(prev => prev.map(c => c.id === convo.id ? { ...c, unreadCount: 0 } : c));
+    };
+
+    const handleChatSelect = (convo: ConvoItem) => {
+        selectConversation(convo);
+    };
+
+    // ── Real-time messages listener ───────────────────────────────────────────
+    useEffect(() => {
+        if (!selectedId) return;
+        const user = authInstance.currentUser;
+        if (!user) return;
+
+        const selectedConvo = convos.find(c => c.id === selectedId);
+        if (!selectedConvo) return;
+
+        let messagesRef;
+        if (selectedConvo.type === 'lucidify') {
+            messagesRef = collection(db, 'users', user.uid, 'conversations', selectedId, 'messages');
+        } else {
+            messagesRef = collection(db, 'directMessages', selectedId, 'messages');
+        }
+
+        const q = query(messagesRef, orderBy('timestamp', 'asc'));
+        const unsub = onSnapshot(q, snap => {
+            setMessages(snap.docs.map(d => ({ id: d.id, ...d.data() } as Message)));
+        });
+
+        return () => unsub();
+    }, [selectedId, authInstance]);
+
+    // ── Auto-scroll to latest message ─────────────────────────────────────────
+    useEffect(() => {
         if (messagesEndRef.current) {
             messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
         }
-    }, [groupedMessages]);
+    }, [messages]);
+
+    // ── Send message ──────────────────────────────────────────────────────────
+    const sendMessage = async () => {
+        if (!newMessage.trim() || !selectedId) return;
+        const user = authInstance.currentUser;
+        if (!user) return;
+
+        const selectedConvo = convos.find(c => c.id === selectedId);
+        if (!selectedConvo) return;
+
+        const now = Timestamp.fromDate(new Date());
+        const msgData = { text: newMessage, sender: user.uid, timestamp: now, isRead: false };
+
+        try {
+            if (selectedConvo.type === 'lucidify') {
+                await addDoc(collection(db, 'users', user.uid, 'conversations', selectedId, 'messages'), msgData);
+                await updateDoc(doc(db, 'users', user.uid, 'conversations', selectedId), {
+                    lastMessage: newMessage,
+                    lastMessageSender: user.uid,
+                    timestamp: now,
+                    'unreadCounts.Lucidify': increment(1),
+                });
+            } else {
+                // DM: write to shared collection
+                await addDoc(collection(db, 'directMessages', selectedId, 'messages'), msgData);
+                const otherUid = selectedConvo.otherUserId!;
+                await updateDoc(doc(db, 'directMessages', selectedId), {
+                    lastMessage: newMessage,
+                    lastMessageSender: user.uid,
+                    timestamp: now,
+                    [`unreadCounts.${otherUid}`]: increment(1),
+                });
+            }
+
+            setConvos(prev => prev.map(c =>
+                c.id === selectedId ? { ...c, lastMessage: newMessage, timestamp: now } : c
+            ));
+            setNewMessage('');
+        } catch (e) { console.error(e); }
+    };
+
+    // ── After DM created from modal ───────────────────────────────────────────
+    const handleDMCreated = async (convoId: string) => {
+        await loadConversations();
+        const user = auth.currentUser;
+        if (!user) return;
+        const dmSnap = await getDoc(doc(db, 'directMessages', convoId));
+        if (!dmSnap.exists()) return;
+        const dm = dmSnap.data();
+        const otherUid = dm.participants.find((p: string) => p !== user.uid);
+        const otherProfile = dm.participantProfiles?.[otherUid] || {};
+        const displayName = otherProfile.firstName
+            ? `${otherProfile.firstName} ${otherProfile.lastName || ''}`.trim()
+            : 'User';
+        const convo: ConvoItem = {
+            id: convoId,
+            type: 'direct',
+            title: displayName,
+            avatarSrc: otherProfile.selectedAvatar || null,
+            isPinned: false,
+            timestamp: dm.timestamp || null,
+            lastMessage: '',
+            unreadCount: 0,
+            otherUserId: otherUid,
+        };
+        selectConversation(convo);
+    };
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    const chunkBySender = (msgs: Message[]) => {
+        const groups: Message[][] = [];
+        let current: Message[] = [];
+        msgs.forEach((m, i) => {
+            if (i === 0 || m.sender !== msgs[i - 1].sender) {
+                if (current.length) groups.push(current);
+                current = [m];
+            } else {
+                current.push(m);
+            }
+        });
+        if (current.length) groups.push(current);
+        return groups;
+    };
+
+    const formatTimestamp = (ts: Timestamp | null) => {
+        if (!ts) return '';
+        const d = ts.toDate();
+        const now = new Date();
+        const isToday = d.toDateString() === now.toDateString();
+        return isToday
+            ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    };
+
+    const selectedConvo = convos.find(c => c.id === selectedId) || null;
+    const groupedMessages = chunkBySender(messages);
+    const filteredConvos = convos.filter(c =>
+        c.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    const pinnedConvos = filteredConvos.filter(c => c.isPinned);
+    const allConvos = filteredConvos.filter(c => !c.isPinned);
+
+    const ConvoRow = ({ convo }: { convo: ConvoItem }) => (
+        <div
+            className={`px-[30px] lg:px-[50px] py-[18px] lg:py-[22px] border-t-[0.5px] border-solid border-white ${selectedId === convo.id ? 'MessagesHighlightGradient border-opacity-50' : 'border-opacity-10'} text-white cursor-pointer flex gap-[15px] hover:bg-white/[0.02]`}
+            onClick={() => handleChatSelect(convo)}
+        >
+            {/* Avatar */}
+            <div className="rounded-[8px] BlackGradient ContentCardShadow flex justify-center items-center flex-shrink-0 overflow-hidden w-[46px] h-[46px]">
+                {convo.type === 'lucidify' ? (
+                    <div className="w-[30px]">
+                        <Image src="/Lucidify Umbrella.png" alt="Lucidify" layout="responsive" width={0} height={0} />
+                    </div>
+                ) : convo.avatarSrc ? (
+                    <Image src={`/${convo.avatarSrc}`} alt={convo.title} layout="responsive" width={0} height={0} />
+                ) : (
+                    <span className="text-[16px] font-semibold opacity-60">{convo.title.charAt(0).toUpperCase()}</span>
+                )}
+            </div>
+
+            <div className="flex flex-col flex-grow min-w-0 justify-center">
+                <div className="flex justify-between w-full">
+                    <h4 className="text-[15px] font-medium flex-grow truncate">{convo.title}</h4>
+                    <h4 className="text-[11px] opacity-40 flex-shrink-0 ml-2">{formatTimestamp(convo.timestamp)}</h4>
+                </div>
+                <div className="flex justify-between w-full mt-[2px]">
+                    <p className="text-[13px] opacity-40 truncate flex-grow">{convo.lastMessage || 'No messages yet'}</p>
+                    {convo.unreadCount > 0 && (
+                        <div className="flex justify-center items-center min-w-[20px] h-[20px] bg-[#6265F0] rounded-full flex-shrink-0 ml-2 px-[4px]">
+                            <span className="text-[11px]">{convo.unreadCount}</span>
+                        </div>
+                    )}
+                </div>
+                {convo.type === 'direct' && (
+                    <span className="text-[10px] opacity-30 mt-[2px]">Direct Message</span>
+                )}
+            </div>
+        </div>
+    );
 
     return (
-        <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
-            {/* Left Sidebar */}
-            <DashboardClientSideNav highlight="messages" />
+        <>
+            {isDMModalOpen && (
+                <AddDirectMessageModal
+                    onClose={() => setIsDMModalOpen(false)}
+                    onConversationCreated={handleDMCreated}
+                />
+            )}
 
-            {/* Right Side (Main Content) */}
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-[60px] xl:pt-0">
-                <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
-                <div className="flex min-w-min items-center justify-between px-[20px] sm:px-[50px] py-6 flex-shrink-0">
-                    <div className="inline-flex items-center gap-[5px]">
-                        <div className="inline-flex items-center gap-[5px] opacity-40">
-                            <div className="w-[15px]">
-                                <Image src="/Home Icon.png" alt="Home Icon" layout="responsive" width={0} height={0} />
-                            </div>
-                            <div className="font-light text-sm">Home</div>
-                        </div>
+            <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
+                <DashboardClientSideNav highlight="messages" />
+
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-[60px] xl:pt-0">
+                    <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
+
+                    {/* Top Bar */}
+                    <div className="flex items-center justify-between px-[20px] sm:px-[50px] py-6 flex-shrink-0">
                         <div className="inline-flex items-center gap-[5px]">
+                            <div className="inline-flex items-center gap-[5px] opacity-40">
+                                <div className="w-[15px]">
+                                    <Image src="/Home Icon.png" alt="Home Icon" layout="responsive" width={0} height={0} />
+                                </div>
+                                <div className="font-light text-sm">Home</div>
+                            </div>
                             <div className="font-light text-sm">/ Messages</div>
                         </div>
-                    </div>
-                    <div className="inline-flex items-center gap-5">
-                        <div className="flex w-[55px] h-[55px] items-center justify-center gap-2.5 relative rounded-[100px] BlackGradient ContentCardShadow hover:cursor-pointer">
-                            <div className="flex flex-col w-5 h-5 items-center justify-center gap-2.5 px-[3px] py-0 absolute -top-[5px] -left-[4px] bg-[#6265f0] rounded-md">
-                                <div className="font-normal text-xs">2</div>
+                        <div className="inline-flex items-center gap-3 sm:gap-5">
+                            <div className="flex w-[45px] h-[45px] sm:w-[55px] sm:h-[55px] items-center justify-center relative rounded-[100px] BlackGradient ContentCardShadow hover:cursor-pointer">
+                                <div className="flex w-5 h-5 items-center justify-center px-[3px] absolute -top-[5px] -left-[4px] bg-[#6265f0] rounded-md">
+                                    <div className="font-normal text-xs">2</div>
+                                </div>
+                                <div className="w-[22px] sm:w-[25px]">
+                                    <Image src="/Notification Bell Icon.png" alt="Bell Icon" layout="responsive" width={0} height={0} />
+                                </div>
                             </div>
-                            <div className="w-[25px]">
-                                <Image src="/Notification Bell Icon.png" alt="Bell Icon" layout="responsive" width={0} height={0} />
-                            </div>
+                            <Link href="/dashboard/settings" className="hidden sm:flex w-[129px] h-[55px] items-center justify-center gap-2.5 rounded-[15px] BlackGradient ContentCardShadow">
+                                <div className="font-light text-sm">Settings</div>
+                                <div className="w-[30px]">
+                                    <Image src="/Settings Icon.png" alt="Settings Icon" layout="responsive" width={0} height={0} />
+                                </div>
+                            </Link>
                         </div>
-                        <Link href="/dashboard/settings" className="flex w-[129px] h-[55px] items-center justify-center gap-2.5 px-0 py-[15px] rounded-[15px] BlackGradient ContentCardShadow">
-                            <div className="font-light text-sm">Settings</div>
-                            <div className="w-[30px]">
-                                <Image src="/Settings Icon.png" alt="Settings Icon" layout="responsive" width={0} height={0} />
-                            </div>
-                        </Link>
                     </div>
-                </div>
 
-                {/* START OF MESSAGES */}
-                <div className="flex flex-1 min-h-0 justify-center px-[12px] sm:px-[50px] pb-[12px] sm:pb-[30px]">
-                    <div className="flex w-full p-[1px] ContentCardShadow rounded-[35px] min-h-0 overflow-hidden">
+                    {/* Messages Layout */}
+                    <div className="flex flex-1 min-h-0 justify-center px-[12px] sm:px-[50px] pb-[12px] sm:pb-[30px]">
+                        <div className="flex w-full p-[1px] ContentCardShadow rounded-[35px] min-h-0 overflow-hidden">
 
-                        {/* Left: Conversations List */}
-                        <div className={`flex flex-col w-full sm:w-[320px] lg:w-[467px] bg-gradient-to-br from-[#1A1A1A] to-[#101010] rounded-[35px] sm:rounded-l-[35px] sm:rounded-r-none min-h-0 overflow-hidden flex-shrink-0 ${mobileView === 'chat' ? 'hidden sm:flex' : 'flex'}`}>
-                            <div className="flex justify-between mx-[30px] lg:mx-[50px] mt-[25px] items-center flex-shrink-0">
-                                <h1 className="text-[24px] lg:text-[30px] font-semibold mb-[2px]">Messages</h1>
-                                <div className="hover:cursor-pointer flex items-center gap-[6px] px-[16px] py-[8px] rounded-[10px] PopupAttentionGradient PopupAttentionShadow">
-                                    <div className="w-[15px]">
-                                        <Image src="/Plus Icon.png" alt="Plus Icon" layout="responsive" width={0} height={0} />
-                                    </div>
-                                    <h3 className="text-[14px] font-light">New</h3>
-                                </div>
-                            </div>
-                            <div className="relative my-[20px] lg:my-[30px] mx-[30px] lg:mx-[50px] flex-shrink-0">
-                                <input
-                                    type="text"
-                                    placeholder="Search"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full px-[15px] py-[12px] lg:py-[15px] rounded-lg BlackWithLightGradient ContentCardShadow text-[14px] focus:outline-none"
-                                />
-                            </div>
-                            <div className="flex flex-col gap-[20px] lg:gap-[30px] flex-1 overflow-y-auto min-h-0">
-                                {/* Pinned Messages */}
-                                <div className="flex flex-col gap-[10px]">
-                                    <h3 className="px-[30px] lg:px-[50px] opacity-70 font-light text-[14px]">Pinned</h3>
-                                    <div className="flex flex-col">
-                                        {filteredConversations.filter(conversation => conversation.isPinned).length > 0 ? (
-                                            filteredConversations
-                                                .filter(conversation => conversation.isPinned)
-                                                .map(conversation => (
-                                                    <div
-                                                        key={conversation.id}
-                                                        className={`px-[30px] lg:px-[50px] py-[18px] lg:py-[22px] border-t-[0.5px] border-solid border-white ${selectedChat === conversation.id ? 'MessagesHighlightGradient border-opacity-50' : 'border-opacity-25'} text-white cursor-pointer flex gap-[15px]`}
-                                                        onClick={() => handleChatSelect(conversation.id)}
-                                                    >
-                                                        <div className="rounded-[5px] BlackGradient ContentCardShadow flex justify-center items-center flex-shrink-0">
-                                                            <div className="w-[30px] mx-[8px] my-[8px]">
-                                                                <Image src="/Lucidify Umbrella.png" alt="Lucidify Logo" layout="responsive" width={0} height={0} />
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex flex-col h-full flex-grow min-w-0">
-                                                            <div className="flex justify-between w-full">
-                                                                <h4 className="text-[16px] flex-grow truncate">{conversation.title || 'Untitled Chat'}</h4>
-                                                                <h4 className="text-[12px] opacity-60 flex-shrink-0 ml-2">{formatTimestamp(conversation.timestamp)}</h4>
-                                                            </div>
-                                                            <div className="flex justify-between w-full">
-                                                                <p className="text-[14px] opacity-40 truncate flex-grow">{conversation.lastMessage}</p>
-                                                                {conversation.unreadCounts?.[auth.currentUser?.uid || ""] > 0 ? (
-                                                                    <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6265F0] rounded-full flex-shrink-0 ml-2">
-                                                                        <h4 className="px-[2px] text-[12px]">{conversation.unreadCounts[auth.currentUser?.uid || ""]}</h4>
-                                                                    </div>
-                                                                ) : null}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                        ) : (
-                                            <div className="w-full flex justify-center items-center">
-                                                <p className="text-sm opacity-60 text-white pt-[30px] pb-[40px]">No messages</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                            {/* ── Left: Conversations List ── */}
+                            <div className={`flex flex-col w-full sm:w-[320px] lg:w-[380px] bg-gradient-to-br from-[#1A1A1A] to-[#101010] rounded-[35px] sm:rounded-l-[35px] sm:rounded-r-none min-h-0 overflow-hidden flex-shrink-0 ${mobileView === 'chat' ? 'hidden sm:flex' : 'flex'}`}>
 
-                                {/* All Messages */}
-                                <div className="flex flex-col gap-[10px]">
-                                    <h3 className="px-[30px] lg:px-[50px] opacity-70 font-light text-[14px]">All Messages</h3>
-                                    <div className="flex flex-col">
-                                        {filteredConversations.filter(conversation => !conversation.isPinned).length > 0 ? (
-                                            filteredConversations
-                                                .filter(conversation => !conversation.isPinned)
-                                                .map(conversation => (
-                                                    <div
-                                                        key={conversation.id}
-                                                        className={`px-[30px] lg:px-[50px] py-[18px] lg:py-[22px] border-t-[0.5px] border-solid border-white ${selectedChat === conversation.id ? 'MessagesHighlightGradient border-opacity-50' : 'border-opacity-25'} text-white cursor-pointer flex gap-[15px]`}
-                                                        onClick={() => handleChatSelect(conversation.id)}
-                                                    >
-                                                        <div className="rounded-[5px] BlackGradient ContentCardShadow flex justify-center items-center flex-shrink-0">
-                                                            <div className="w-[30px] mx-[8px] my-[8px]">
-                                                                <Image src="/Lucidify Umbrella.png" alt="Lucidify Logo" layout="responsive" width={0} height={0} />
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex flex-col h-full flex-grow min-w-0">
-                                                            <div className="flex justify-between w-full">
-                                                                <h4 className="text-[16px] flex-grow truncate">{conversation.title || 'Untitled Chat'}</h4>
-                                                                <h4 className="text-[12px] opacity-60 flex-shrink-0 ml-2">{formatTimestamp(conversation.timestamp)}</h4>
-                                                            </div>
-                                                            <div className="flex justify-between w-full">
-                                                                <p className="text-[14px] opacity-40 truncate flex-grow">{conversation.lastMessage}</p>
-                                                                {conversation.unreadCounts?.[auth.currentUser?.uid || ""] > 0 ? (
-                                                                    <div className="flex justify-center items-center w-[20px] h-[20px] bg-[#6265F0] rounded-full flex-shrink-0 ml-2">
-                                                                        <h4 className="px-[2px] text-[12px]">{conversation.unreadCounts[auth.currentUser?.uid || ""]}</h4>
-                                                                    </div>
-                                                                ) : null}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))
-                                        ) : (
-                                            <div className="w-full flex justify-center items-center">
-                                                <p className="text-sm opacity-60 text-white pt-[30px] pb-[40px]">No messages</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right: Chat Messages */}
-                        <div className={`flex-1 bg-gradient-to-br from-[#101010] to-[#1A1A1A] rounded-[35px] sm:rounded-l-none sm:rounded-r-[35px] flex flex-col LeftGradientBorder min-h-0 overflow-hidden ${mobileView === 'list' ? 'hidden sm:flex' : 'flex'}`}>
-                            {/* Top part */}
-                            <div className="BlackWithLightGradient rounded-t-[35px] sm:rounded-tl-none sm:rounded-tr-[35px] px-[20px] sm:px-[60px] py-[20px] flex justify-between border-b-[0.5px] border-solid border-white border-opacity-20 flex-shrink-0 items-center">
-                                {/* Back button - mobile only */}
-                                <button
-                                    className="sm:hidden mr-[10px] opacity-60 hover:opacity-100 flex-shrink-0"
-                                    onClick={() => setMobileView('list')}
-                                    aria-label="Back to conversations"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <path d="M12 4l-6 6 6 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                </button>
-                                <div className="flex gap-[10px] flex-1 min-w-0">
-                                    <div className="rounded-[5px] BlackGradient ContentCardShadow flex justify-center items-center flex-shrink-0">
-                                        <div className="w-[30px] h-[30px] flex items-center mx-[8px] my-[8px]">
-                                            <Image src="/Lucidify Umbrella.png" alt="Lucidify Logo" layout="responsive" width={0} height={0} />
+                                {/* Header */}
+                                <div className="flex justify-between mx-[30px] lg:mx-[40px] mt-[25px] items-center flex-shrink-0">
+                                    <h1 className="text-[22px] lg:text-[26px] font-semibold">Messages</h1>
+                                    <button
+                                        onClick={() => setIsDMModalOpen(true)}
+                                        className="flex items-center gap-[6px] px-[14px] py-[8px] rounded-[10px] PopupAttentionGradient PopupAttentionShadow hover:opacity-90"
+                                    >
+                                        <div className="w-[13px]">
+                                            <Image src="/Plus Icon.png" alt="New" layout="responsive" width={0} height={0} />
                                         </div>
-                                    </div>
-                                    <div className="h-full flex flex-col justify-between font-semibold text-[16px] min-w-0">
-                                        <h3 className="truncate">{selectedConversation ? selectedConversation.title || 'Untitled Chat' : 'Loading...'}</h3>
-                                        <h3 className="opacity-60 text-[14px] font-light truncate">{selectedConversation ? selectedConversation.lastSeen || 'Last seen...' : 'Last seen...'}</h3>
-                                    </div>
+                                        <span className="text-[13px] font-light">New</span>
+                                    </button>
                                 </div>
-                                <div className="flex gap-[15px] sm:gap-[30px] items-center flex-shrink-0">
-                                    <div className="hidden sm:flex gap-[15px]">
-                                        <div className="rounded-[5px] BlackGradient ContentCardShadow flex justify-center items-center hover:cursor-pointer hover:scale-95">
-                                            <div className="w-[20px] h-[20px] flex items-center mx-[8px] my-[8px]">
-                                                <Image src="/Phone Call Icon.png" alt="Phone Call Icon" layout="responsive" width={0} height={0} />
-                                            </div>
+
+                                {/* Search */}
+                                <div className="relative my-[16px] mx-[30px] lg:mx-[40px] flex-shrink-0">
+                                    <input
+                                        type="text"
+                                        placeholder="Search conversations..."
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        className="w-full px-[15px] py-[11px] rounded-[12px] BlackWithLightGradient ContentCardShadow text-[13px] focus:outline-none placeholder:opacity-30"
+                                    />
+                                </div>
+
+                                {/* Conversation list */}
+                                <div className="flex flex-col flex-1 overflow-y-auto min-h-0">
+                                    {pinnedConvos.length > 0 && (
+                                        <div className="mb-[4px]">
+                                            <p className="px-[30px] lg:px-[40px] pb-[8px] opacity-40 font-light text-[12px] uppercase tracking-wide">Pinned</p>
+                                            {pinnedConvos.map(c => <ConvoRow key={c.id} convo={c} />)}
                                         </div>
-                                        <div className="rounded-[5px] BlackGradient ContentCardShadow flex justify-center items-center hover:cursor-pointer hover:scale-95">
-                                            <div className="w-[20px] h-[20px] flex items-center mx-[8px] my-[8px]">
-                                                <Image src="/Video Call Icon.png" alt="Video Call Icon" layout="responsive" width={0} height={0} />
-                                            </div>
+                                    )}
+                                    {allConvos.length > 0 ? (
+                                        <div>
+                                            <p className="px-[30px] lg:px-[40px] pb-[8px] opacity-40 font-light text-[12px] uppercase tracking-wide">
+                                                {pinnedConvos.length > 0 ? 'All Messages' : 'Conversations'}
+                                            </p>
+                                            {allConvos.map(c => <ConvoRow key={c.id} convo={c} />)}
                                         </div>
-                                    </div>
-                                    <div className="flex flex-col gap-[4px] hover:cursor-pointer hover:opacity-50">
-                                        <div className="bg-white rounded-full w-[4px] h-[4px]" />
-                                        <div className="bg-white rounded-full w-[4px] h-[4px]" />
-                                        <div className="bg-white rounded-full w-[4px] h-[4px]" />
-                                    </div>
+                                    ) : convos.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center py-[40px] gap-[10px] opacity-40">
+                                            <span className="text-[32px]">💬</span>
+                                            <p className="text-[13px] font-light">No conversations yet</p>
+                                            <button onClick={() => setIsDMModalOpen(true)} className="text-[12px] text-[#725CF7] hover:opacity-80 mt-[4px]">
+                                                Start a new message
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex justify-center py-[30px]">
+                                            <p className="text-[13px] opacity-40">No results</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Middle part - scrollable */}
-                            <div ref={messagesEndRef} className="flex flex-col overflow-y-auto gap-[15px] flex-1 min-h-0">
-                                {groupedMessages.map((group, index) => (
-                                    <div key={index} className={`flex mx-[20px] sm:mx-[60px] my-[15px] sm:my-[30px] ${group[0].sender === authInstance.currentUser?.uid ? "justify-end" : "justify-start"}`}>
-                                        <div className="max-w-[85%] sm:max-w-[80%]">
-                                            {group[0].sender === authInstance.currentUser?.uid ? (
-                                                <div className="inline-flex gap-[10px] sm:gap-[15px]">
-                                                    <div className="flex flex-col gap-[10px] items-end">
-                                                        <div className="flex items-center gap-[10px]">
-                                                            <h3 className="opacity-80 font-light text-[14px]">You</h3>
-                                                            <h3 className="font-semibold text-[16px]">You</h3>
-                                                        </div>
-                                                        <div className="flex flex-col gap-[10px] items-end">
-                                                            {group.map(message => (
-                                                                <div key={message.id} className="inline flex-col gap-[50px]">
-                                                                    <div className={`inline-flex text-[14px] font-light rounded-b-[15px] rounded-tl-[15px] px-[15px] py-[10px] ${group[0].sender === authInstance.currentUser?.uid ? 'PopupAttentionGradient PopupAttentionShadow' : 'MessagesHighlightGradient ContentCardShadow'}`}>
-                                                                        {message.text}
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                    <div className="rounded-[5px] BlackGradient ContentCardShadow inline-flex justify-center items-center self-start flex-shrink-0">
-                                                        <div className="w-[35px] h-[35px] mx-[8px] my-[8px] flex items-center rounded-full overflow-clip">
-                                                            <Image src={"/" + selectedAvatar || "/Lucidify Umbrella.png"} alt="Your PFP" layout="responsive" width={0} height={0} />
-                                                        </div>
-                                                    </div>
-                                                </div>
+                            {/* ── Right: Chat Panel ── */}
+                            <div className={`flex-1 bg-gradient-to-br from-[#101010] to-[#1A1A1A] rounded-[35px] sm:rounded-l-none sm:rounded-r-[35px] flex flex-col LeftGradientBorder min-h-0 overflow-hidden ${mobileView === 'list' ? 'hidden sm:flex' : 'flex'}`}>
+
+                                {/* Chat header */}
+                                <div className="BlackWithLightGradient rounded-t-[35px] sm:rounded-tl-none sm:rounded-tr-[35px] px-[20px] sm:px-[40px] py-[18px] flex justify-between border-b-[0.5px] border-solid border-white border-opacity-10 flex-shrink-0 items-center gap-[12px]">
+                                    <button
+                                        className="sm:hidden opacity-60 hover:opacity-100 flex-shrink-0"
+                                        onClick={() => setMobileView('list')}
+                                    >
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                            <path d="M12 4l-6 6 6 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+
+                                    <div className="flex gap-[12px] flex-1 min-w-0 items-center">
+                                        <div className="rounded-[8px] BlackGradient ContentCardShadow flex justify-center items-center flex-shrink-0 overflow-hidden w-[44px] h-[44px]">
+                                            {selectedConvo?.type === 'direct' && selectedConvo.avatarSrc ? (
+                                                <Image src={`/${selectedConvo.avatarSrc}`} alt={selectedConvo.title} layout="responsive" width={0} height={0} />
+                                            ) : selectedConvo?.type === 'direct' ? (
+                                                <span className="text-[18px] font-semibold opacity-60">{selectedConvo.title.charAt(0)}</span>
                                             ) : (
-                                                <div className="inline-flex gap-[10px] sm:gap-[15px]">
-                                                    <div className="rounded-[5px] BlackGradient ContentCardShadow inline-flex justify-center items-center self-start flex-shrink-0">
-                                                        <div className="w-[30px] h-[30px] mx-[8px] my-[8px] flex items-center">
-                                                            <Image src="/Lucidify Umbrella.png" alt="Lucidify Logo" layout="responsive" width={0} height={0} />
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex flex-col gap-[10px]">
-                                                        <div className="flex items-center gap-[10px]">
-                                                            <h3 className="font-semibold text-[16px]">{selectedConversation ? selectedConversation.title || 'Untitled Chat' : 'Loading...'}</h3>
-                                                            <h3 className="opacity-80 font-light text-[14px]">{selectedConversation ? selectedConversation.title || 'Untitled Chat' : 'Loading...'}</h3>
-                                                        </div>
-                                                        <div className="flex flex-col gap-[10px]">
-                                                            {group.map(message => (
-                                                                <div key={message.id} className="inline flex-col gap-[50px]">
-                                                                    <div className={`inline-flex text-[14px] font-light rounded-b-[15px] rounded-tr-[15px] px-[15px] py-[10px] ${group[0].sender === authInstance.currentUser?.uid ? 'PopupAttentionGradient PopupAttentionShadow' : 'MessagesHighlightGradient ContentCardShadow'}`}>
-                                                                        {message.text}
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
+                                                <div className="w-[28px]">
+                                                    <Image src="/Lucidify Umbrella.png" alt="Lucidify" layout="responsive" width={0} height={0} />
                                                 </div>
                                             )}
                                         </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <h3 className="text-[15px] font-semibold truncate">{selectedConvo?.title || 'Select a chat'}</h3>
+                                            <p className="text-[12px] opacity-40 truncate">
+                                                {selectedConvo?.type === 'direct' ? 'Direct Message' : 'Lucidify Team'}
+                                            </p>
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
 
-                            {/* Bottom part */}
-                            <div className="BlackGradient ContentCardShadow rounded-b-[35px] sm:rounded-bl-none sm:rounded-br-[35px] px-[20px] sm:px-[50px] py-[17px] flex gap-[25px] flex-shrink-0">
-                                <div className="BlackWithLightGradient ContentCardShadow rounded-[10px] flex gap-[25px] px-[15px] sm:px-[25px] py-[13px] w-full">
-                                    <input
-                                        type="text"
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                        placeholder="Write a Message..."
-                                        className="w-full focus:outline-none text-[16px] font-light bg-transparent"
-                                    />
-                                    <div className="flex gap-[25px] items-center">
-                                        <div className="hidden sm:flex gap-[15px]">
-                                            <div className="w-[20px] opacity-60 hover:opacity-100 hover:cursor-pointer">
-                                                <Image src="/Attachment Icon.png" alt="Send Icon" layout="responsive" width={0} height={0} />
-                                            </div>
-                                            <div className="w-[20px] opacity-60 hover:opacity-100 hover:cursor-pointer">
-                                                <Image src="/Microphone Icon.png" alt="Send Icon" layout="responsive" width={0} height={0} />
+                                    <div className="hidden sm:flex gap-[10px] items-center flex-shrink-0">
+                                        <div className="rounded-[8px] BlackGradient ContentCardShadow flex justify-center items-center hover:cursor-pointer hover:opacity-70 w-[36px] h-[36px]">
+                                            <div className="w-[18px]">
+                                                <Image src="/Phone Call Icon.png" alt="Call" layout="responsive" width={0} height={0} />
                                             </div>
                                         </div>
-                                        <button onClick={sendMessage}>
-                                            <div className="w-[25px]">
-                                                <Image src="/Send Icon.png" alt="Send Icon" layout="responsive" width={0} height={0} />
+                                        <div className="rounded-[8px] BlackGradient ContentCardShadow flex justify-center items-center hover:cursor-pointer hover:opacity-70 w-[36px] h-[36px]">
+                                            <div className="w-[18px]">
+                                                <Image src="/Video Call Icon.png" alt="Video" layout="responsive" width={0} height={0} />
                                             </div>
-                                        </button>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col gap-[4px] hover:cursor-pointer hover:opacity-50 flex-shrink-0">
+                                        <div className="bg-white rounded-full w-[4px] h-[4px]" />
+                                        <div className="bg-white rounded-full w-[4px] h-[4px]" />
+                                        <div className="bg-white rounded-full w-[4px] h-[4px]" />
+                                    </div>
+                                </div>
+
+                                {/* Messages */}
+                                <div ref={messagesEndRef} className="flex flex-col overflow-y-auto gap-[10px] flex-1 min-h-0 px-[20px] sm:px-[40px] py-[20px]">
+                                    {groupedMessages.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center h-full gap-[10px] opacity-30">
+                                            <span className="text-[36px]">💬</span>
+                                            <p className="text-[14px] font-light">No messages yet. Say hello!</p>
+                                        </div>
+                                    )}
+                                    {groupedMessages.map((group, idx) => {
+                                        const isMe = group[0].sender === authInstance.currentUser?.uid;
+                                        return (
+                                            <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} mb-[6px]`}>
+                                                <div className={`flex gap-[10px] sm:gap-[12px] max-w-[85%] sm:max-w-[75%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                                    {/* Avatar */}
+                                                    <div className="rounded-[8px] BlackGradient ContentCardShadow flex justify-center items-center self-start flex-shrink-0 w-[38px] h-[38px] overflow-hidden">
+                                                        {isMe ? (
+                                                            myAvatar ? (
+                                                                <Image src={`/${myAvatar}`} alt="You" layout="responsive" width={0} height={0} />
+                                                            ) : (
+                                                                <span className="text-[14px] opacity-60">👤</span>
+                                                            )
+                                                        ) : selectedConvo?.type === 'direct' && selectedConvo.avatarSrc ? (
+                                                            <Image src={`/${selectedConvo.avatarSrc}`} alt={selectedConvo.title} layout="responsive" width={0} height={0} />
+                                                        ) : selectedConvo?.type === 'direct' ? (
+                                                            <span className="text-[14px] font-semibold opacity-60">{selectedConvo.title.charAt(0)}</span>
+                                                        ) : (
+                                                            <div className="w-[24px]">
+                                                                <Image src="/Lucidify Umbrella.png" alt="Lucidify" layout="responsive" width={0} height={0} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Bubble group */}
+                                                    <div className={`flex flex-col gap-[6px] ${isMe ? 'items-end' : 'items-start'}`}>
+                                                        <p className="text-[12px] opacity-40 font-light px-[4px]">
+                                                            {isMe ? 'You' : selectedConvo?.title || ''}
+                                                        </p>
+                                                        {group.map(msg => (
+                                                            <div
+                                                                key={msg.id}
+                                                                className={`text-[14px] font-light px-[15px] py-[10px] ${
+                                                                    isMe
+                                                                        ? 'PopupAttentionGradient PopupAttentionShadow rounded-b-[15px] rounded-tl-[15px]'
+                                                                        : 'MessagesHighlightGradient ContentCardShadow rounded-b-[15px] rounded-tr-[15px]'
+                                                                }`}
+                                                            >
+                                                                {msg.text}
+                                                            </div>
+                                                        ))}
+                                                        <p className="text-[11px] opacity-25 px-[4px]">{formatTimestamp(group[group.length - 1].timestamp)}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Input */}
+                                <div className="BlackGradient ContentCardShadow rounded-b-[35px] sm:rounded-bl-none sm:rounded-br-[35px] px-[20px] sm:px-[40px] py-[16px] flex-shrink-0">
+                                    <div className="BlackWithLightGradient ContentCardShadow rounded-[12px] flex gap-[15px] px-[16px] sm:px-[22px] py-[12px] items-center">
+                                        <input
+                                            type="text"
+                                            value={newMessage}
+                                            onChange={e => setNewMessage(e.target.value)}
+                                            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                                            placeholder="Write a message..."
+                                            className="w-full focus:outline-none text-[14px] sm:text-[15px] font-light bg-transparent placeholder:opacity-30"
+                                        />
+                                        <div className="flex gap-[12px] items-center flex-shrink-0">
+                                            <div className="hidden sm:flex gap-[12px]">
+                                                <div className="w-[18px] opacity-40 hover:opacity-80 hover:cursor-pointer">
+                                                    <Image src="/Attachment Icon.png" alt="Attach" layout="responsive" width={0} height={0} />
+                                                </div>
+                                                <div className="w-[18px] opacity-40 hover:opacity-80 hover:cursor-pointer">
+                                                    <Image src="/Microphone Icon.png" alt="Mic" layout="responsive" width={0} height={0} />
+                                                </div>
+                                            </div>
+                                            <button onClick={sendMessage} className="w-[22px] sm:w-[25px] hover:opacity-70">
+                                                <Image src="/Send Icon.png" alt="Send" layout="responsive" width={0} height={0} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 
