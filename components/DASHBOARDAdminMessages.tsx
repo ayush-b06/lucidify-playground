@@ -285,12 +285,12 @@ const DASHBOARDAdminMessages: React.FC = () => {
     }, [groupedMessages]);
 
     return (
-        <div className="flex h-screen DashboardBackgroundGradient overflow-hidden">
+        <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
             {/* Left Sidebar */}
             <DashboardAdminSideNav highlight="messages" />
 
             {/* Right Side (Main Content) */}
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden pt-[60px] xl:pt-0">
                 <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
                 <div className="flex min-w-min items-center justify-between px-[20px] sm:px-[50px] py-6 flex-shrink-0">
                     <div className="inline-flex items-center gap-[5px]">

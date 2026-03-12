@@ -64,12 +64,12 @@ const DASHBOARDClientGetStarted = () => {
   }, [auth, router]);
 
   return (
-    <div className="flex h-screen DashboardBackgroundGradient">
+    <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
       {/* Left Sidebar */}
       <DashboardClientSideNav highlight="getStarted" />
 
       {/* Right Side (Main Content) */}
-      <div className="flex-1 flex flex-col"> {/* Takes up remaining space */}
+      <div className="flex-1 flex flex-col pt-[60px] xl:pt-0"> {/* Takes up remaining space */}
         <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
 
 

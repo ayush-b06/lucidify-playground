@@ -1,3 +1,5 @@
+"use client";
+
 import Image from 'next/image';
 import React, { useEffect, useState } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
@@ -173,7 +175,7 @@ const CreateWebDesignPopup: React.FC<CreateWebDesignPopupProps> = ({ closeCreatP
 
     return (
         <div
-            className={`h-screen bg-black bg-opacity-50 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 pointer-events-none translate-y-[50px]'} fixed inset-x-0 flex justify-center items-center z-20`}
+            className={`h-screen bg-black bg-opacity-50 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 pointer-events-none translate-y-[50px]'} fixed inset-0 flex justify-center items-center z-[55]`}
         >
             <form
                 className="relative flex max-h-[83vh] BlackScrollbar overflow-y-auto flex-col items-start px-[50px] py-5 BlackGradient ContentCardShadow rounded-[50px]"
@@ -221,14 +223,14 @@ const CreateWebDesignPopup: React.FC<CreateWebDesignPopupProps> = ({ closeCreatP
                                                 <Image src="/Upload Icon.png" alt="Upload Icon" layout="responsive" width={0} height={0} />
                                             </div>
                                         </div>
-                                        <label className="w-[246px] text-xs leading-[normal]">
+                                        <label className="w-[246px] text-xs leading-[normal] cursor-pointer">
                                             <span className="font-normal text-xs">Drag &amp; Drop your files here or </span>
                                             <span className="underline">Choose file</span>
                                             <input
                                                 type="file"
-                                                className=""
+                                                className="hidden"
                                                 onChange={handleDesignUpload}
-                                                accept=".png,.jpg,.jpeg,.pdf" // Adjust accepted file types
+                                                accept=".png,.jpg,.jpeg,.pdf"
                                             />
                                         </label>
                                     </div>

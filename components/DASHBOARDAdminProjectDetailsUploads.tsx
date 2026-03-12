@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { collection, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig'; // Adjust the import path based on your Firebase setup
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 import Link from 'next/link';
 import Image from 'next/image';
 import DashboardAdminSideNav from '@/components/DashboardAdminSideNav';
@@ -13,330 +13,249 @@ interface DASHBOARDAdminProjectDetailsUploadsProps {
     projectId: string;
 }
 
-interface ProjectDetails {
-    progress: number;
-    recentActivity: string[];
-    comments: string[];
-    status: number;
-    [key: string]: any; // Allow additional fields if necessary
-}
-
 interface Design {
     designName: string;
     designDescription: string;
     designURL: string;
-    designPage: "Sections" | "Full-Page";
+    designPage: 'Sections' | 'Full-Page';
     designType: string;
     dateCreated: string;
     selectedDesign?: boolean;
 }
 
 const DASHBOARDAdminProjectDetailsUploads = ({ userId, projectId }: DASHBOARDAdminProjectDetailsUploadsProps) => {
-    const [projectDetails, setProjectDetails] = useState<any | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [projectName, setProjectName] = useState<string>('');
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedPage, setSelectedPage] = useState("Sections");
-    const [sectionsCount, setSectionsCount] = useState(0);
-    const [fullPageCount, setFullPageCount] = useState(0);
-    const [designs, setDesigns] = useState<Design[]>([]);
-    const [isCreateWebDesignPopupOpen, setIsCreateWebDesignPopupOpen] = useState(false);
-
-    const toggleCreateWebDesignPopup = () => {
-        setIsCreateWebDesignPopupOpen(!isCreateWebDesignPopupOpen);
-    };
+    const [selectedTab, setSelectedTab] = useState<'Sections' | 'Full-Page'>('Sections');
+    const [sectionDesigns, setSectionDesigns] = useState<Design[]>([]);
+    const [fullPageDesigns, setFullPageDesigns] = useState<Design[]>([]);
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
+    const [lightboxURL, setLightboxURL] = useState<string | null>(null);
 
     useEffect(() => {
-        async function fetchData() {
-            const basePath = `users/${userId}/projects/${projectId}`;
-            let sectionDocs: Design[] = [];
-            let fullPageDocs: Design[] = [];
-
+        const fetchAll = async () => {
+            if (!userId || !projectId) return;
             try {
-                // Fetch Section Web Designs
-                const sectionsCollection = collection(db, `${basePath}/section web designs`);
-                const sectionsSnapshot = await getDocs(sectionsCollection);
-                sectionDocs = sectionsSnapshot.docs.map((doc) => doc.data() as Design);
-                setSectionsCount(sectionDocs.length);
-            } catch {
-                setSectionsCount(0); // Handle case where "section web designs" doesn't exist
-            }
+                const basePath = `users/${userId}/projects/${projectId}`;
 
-            try {
-                // Fetch Full-Page Web Designs
-                const fullPageCollection = collection(db, `${basePath}/full-page web designs`);
-                const fullPageSnapshot = await getDocs(fullPageCollection);
-                fullPageDocs = fullPageSnapshot.docs.map((doc) => doc.data() as Design);
-                setFullPageCount(fullPageDocs.length);
-            } catch {
-                setFullPageCount(0); // Handle case where "full-page web designs" doesn't exist
-            }
+                // Project name
+                const projectDoc = await getDoc(doc(db, 'users', userId, 'projects', projectId));
+                if (projectDoc.exists()) setProjectName(projectDoc.data().projectName || '');
+                else { setError('Project not found.'); return; }
 
-            // Set designs based on the selected page
-            setDesigns(selectedPage === "Sections" ? sectionDocs : fullPageDocs);
-        }
+                // Section designs
+                try {
+                    const snap = await getDocs(collection(db, `${basePath}/section web designs`));
+                    setSectionDesigns(snap.docs.map(d => d.data() as Design));
+                } catch { setSectionDesigns([]); }
 
-        fetchData();
-    }, [selectedPage, userId, projectId]);
+                // Full-page designs
+                try {
+                    const snap = await getDocs(collection(db, `${basePath}/full-page web designs`));
+                    setFullPageDesigns(snap.docs.map(d => d.data() as Design));
+                } catch { setFullPageDesigns([]); }
 
-
-    useEffect(() => {
-        const fetchProjectDetails = async () => {
-            if (!userId || !projectId) {
-                return; // If userId or projectId is not available, do not fetch
-            }
-
-            try {
-                // Reference to the specific user's project document
-                const projectDocRef = doc(db, 'users', userId, 'projects', projectId);
-                const projectDoc = await getDoc(projectDocRef);
-
-                if (projectDoc.exists()) {
-                    const projectData = projectDoc.data();
-                    setProjectDetails(projectData); // Store entire project data in state
-                } else {
-                    setError('Project not found.');
-                }
             } catch (err) {
-                console.error('Error fetching project details:', err);
-                setError('Failed to fetch project details.');
+                console.error(err);
+                setError('Failed to load project.');
             } finally {
                 setLoading(false);
             }
         };
+        fetchAll();
+    }, [userId, projectId, isPopupOpen]); // refetch after popup closes (new upload)
 
-        fetchProjectDetails();
-    }, [userId, projectId]); // Include userId and projectId in the dependency array
-
-    const handleProgressUpdate = async (newProgress: number, newActivity: string, newComment: string, newStatus: number) => {
-        if (!userId || !projectId) return; // Ensure we have userId and projectId
-
-        try {
-            // Reference to the specific user's project document
-            const projectDocRef = doc(db, 'users', userId, 'projects', projectId);
-
-            // Update the progress field in Firestore
-            await updateDoc(projectDocRef, {
-                progress: newProgress,
-                recentActivity: newActivity,
-                comments: newComment,
-                status: newStatus,
-            });
-
-            // Update local state to reflect new progress and activities
-            setProjectDetails((prevDetails: ProjectDetails | null) => {
-                if (!prevDetails) return null;
-
-                return {
-                    ...prevDetails,
-                    progress: newProgress,
-                    recentActivity: [...(prevDetails.recentActivity || []), newActivity],
-                    comments: [...(prevDetails.comments || []), newComment],
-                    status: newStatus,
-                };
-            });
-
-
-        } catch (err) {
-            console.error('Error updating progress:', err);
-        }
-    };
+    const displayedDesigns = selectedTab === 'Sections' ? sectionDesigns : fullPageDesigns;
 
     if (loading) {
-        return <div>Loading project details...</div>;
+        return (
+            <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
+                <DashboardAdminSideNav highlight="projects" />
+                <div className="flex-1 flex items-center justify-center pt-[60px] xl:pt-0">
+                    <p className="opacity-40 font-light text-[14px]">Loading uploads...</p>
+                </div>
+            </div>
+        );
     }
 
     if (error) {
-        return <div>{error}</div>;
+        return (
+            <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
+                <DashboardAdminSideNav highlight="projects" />
+                <div className="flex-1 flex items-center justify-center pt-[60px] xl:pt-0">
+                    <p className="text-red-400 text-[14px]">{error}</p>
+                </div>
+            </div>
+        );
     }
 
-    // Access project data using projectDetails, assuming projectName and projectDescription are fields in the document
-    const { projectName, progress, recentActivity, comments } = projectDetails || {};
-
     return (
-        <div className="flex h-screen DashboardBackgroundGradient">
+        <>
             <CreateWebDesignPopup
-                closeCreatProjectPopup={toggleCreateWebDesignPopup}
-                isVisible={isCreateWebDesignPopupOpen}
+                closeCreatProjectPopup={() => setIsPopupOpen(false)}
+                isVisible={isPopupOpen}
                 userId={userId}
-                projectId={projectId} // Pass the projectId here
+                projectId={projectId}
             />
-            {/* Left Sidebar */}
-            <DashboardAdminSideNav highlight="projects" />
 
-            {/* Right Side (Main Content) */}
-            <div className="flex-1 flex flex-col">
-                <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
-                <div className="flex min-w-min items-center justify-between px-[50px] py-6">
-                    <div className="inline-flex items-center gap-[5px]">
-                        <div className="inline-flex items-center gap-[5px] opacity-40">
-                            <div className="w-[15px]">
-                                <Image
-                                    src="/Home Icon.png"
-                                    alt="Home Icon"
-                                    layout="responsive"
-                                    width={0}
-                                    height={0}
-                                />
-                            </div>
-                            <div className="font-light text-sm">ADMIN</div>
-                        </div>
-                        <div className="inline-flex items-center gap-[5px]">
-                            <div className="font-light text-sm">/ Projects</div>
-                            <div className="font-light text-sm">/ {projectName}</div>
-                        </div>
-                    </div>
-                    <div className="inline-flex items-center gap-5">
-                        <div className="flex w-[55px] h-[55px] items-center justify-center gap-2.5 relative rounded-[100px] BlackGradient ContentCardShadow hover:cursor-pointer">
-                            <div className="flex flex-col w-5 h-5 items-center justify-center gap-2.5 px-[3px] py-0 absolute -top-[5px] -left-[4px] bg-[#6265f0] rounded-md">
-                                <div className=" font-normal text-xs">2</div>
-                            </div>
-                            <div className=" w-[25px]">
-                                <Image
-                                    src="/Notification Bell Icon.png"
-                                    alt="Bell Icon"
-                                    layout="responsive"
-                                    width={0}
-                                    height={0}
-                                />
-                            </div>
-                        </div>
-                        <Link
-                            href="/dashboard/settings"
-                            className="flex w-[129px] h-[55px] items-center justify-center gap-2.5 px-0 py-[15px] rounded-[15px] BlackGradient ContentCardShadow"
-                        >
-                            <div className="font-light text-sm">Settings</div>
-                            <div className="w-[30px]">
-                                <Image
-                                    src="/Settings Icon.png"
-                                    alt="Settings Icon"
-                                    layout="responsive"
-                                    width={0}
-                                    height={0}
-                                />
-                            </div>
-                        </Link>
+            {/* Lightbox */}
+            {lightboxURL && (
+                <div
+                    className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-[20px]"
+                    onClick={() => setLightboxURL(null)}
+                >
+                    <div className="relative max-w-[90vw] max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                        <img src={lightboxURL} alt="Design preview" className="max-w-full max-h-[85vh] rounded-[16px] object-contain" />
+                        <button
+                            onClick={() => setLightboxURL(null)}
+                            className="absolute -top-[14px] -right-[14px] w-[32px] h-[32px] rounded-full BlackGradient ContentCardShadow flex items-center justify-center text-[16px] opacity-70 hover:opacity-100"
+                        >✕</button>
                     </div>
                 </div>
+            )}
 
-                <div className="flex w-full justify-center">
-                    <div className="flex flex-col gap-[20px] relative w-full mx-[50px] my-[30px]">
-                        <div className="inline-flex items-center gap-[30px] relative">
-                            <Link
-                                href={`/dashboard/projects/${projectId}?projectId=${projectId}&userId=${userId}`}
-                                className="relative font-normal text-[#ffffff66] text-base hover:cursor-pointer">
-                                Overview
-                            </Link>
-                            <Link
-                                href={`/dashboard/projects/${projectId}/progress?projectId=${projectId}&userId=${userId}`}
-                                className="relative font-normal text-[#ffffff66] text-base hover:cursor-pointer">
-                                Progress
-                            </Link>
-                            <Link
-                                href={`/dashboard/projects/${projectId}/uploads?projectId=${projectId}&userId=${userId}`}
-                                className="relative font-normal text-base hover:cursor-pointer">Uploads</Link>
-                            <div className="relative font-normal text-[#ffffff66] text-base hover:cursor-pointer">Analytics</div>
-                        </div>
-                        <div className="flex flex-col w-full CardGradient ContentCardShadow rounded-[15px]">
-                            <div className="mx-[35px] my-[25px] flex flex-col">
-                                <h1 className="text-[24px] font-semibold ">Website Design Upload Station</h1>
-                                <div className="flex justify-between items-end mb-[20px]">
-                                    <div className="flex gap-[30px]">
-                                        <button
-                                            onClick={() => setSelectedPage("Sections")}
-                                            className={`flex gap-[10px] items-center ${selectedPage === "Full-Page" ? "opacity-50" : "opacity-100"}`}>
-                                            <div className="PopupAttentionGradient PopupAttentionShadow rounded-[7px] flex justify-center items-center w-[20px] h-[20px]">
-                                                <h3 className="mx-[8px] text-[11px]">{sectionsCount}</h3>
-                                            </div>
-                                            <h3 className="text-[15px]">Sections</h3>
-                                        </button>
-                                        <button
-                                            onClick={() => setSelectedPage("Full-Page")}
-                                            className={`flex gap-[10px] items-center ${selectedPage === "Sections" ? "opacity-50" : "opacity-100"}`}>
-                                            <div className="PopupAttentionGradient PopupAttentionShadow rounded-[7px] flex justify-center items-center w-[20px] h-[20px]">
-                                                <h3 className="mx-[8px] text-[11px]">{fullPageCount}</h3>
-                                            </div>
-                                            <h3 className="text-[15px]">Full-Page</h3>
-                                        </button>
-                                    </div>
-                                    <button className="flex flex-col w-[149px] h-[41px] items-center justify-center gap-2.5 px-[18px] py-2 relative rounded-[10px] ContentCardShadow AddProjectGradient hover:cursor-pointer"
-                                        onClick={toggleCreateWebDesignPopup}
-                                    >
-                                        <div className="inline-flex items-center gap-2.5 relative "
-                                        >
+            <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
+                <DashboardAdminSideNav highlight="projects" />
 
-                                            <div className=" w-[15px]">
-                                                <Image
-                                                    src="/Plus Icon.png"
-                                                    alt="Plus Icon"
-                                                    layout="responsive"
-                                                    width={0}
-                                                    height={0}
-                                                />
-                                            </div>
-                                            <div>
-                                                {/* Add Design Button */}
-                                                <div
-                                                    className="relative font-normal text-[15px] text-center cursor-pointer"
-                                                >
-                                                    Add design
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </button>
+                <div className="flex-1 flex flex-col pt-[60px] xl:pt-0 min-h-0 overflow-hidden">
+                    <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
+
+                    {/* Top Bar */}
+                    <div className="flex items-center justify-between px-[20px] sm:px-[50px] py-6 flex-shrink-0">
+                        <div className="inline-flex items-center gap-[5px]">
+                            <div className="inline-flex items-center gap-[5px] opacity-40">
+                                <div className="w-[15px]">
+                                    <Image src="/Home Icon.png" alt="Home" layout="responsive" width={0} height={0} />
                                 </div>
-
-                                <div className="flex flex-wrap gap-4">
-                                    {designs.length > 0 ? (
-                                        designs.map((design, index) => (
-                                            <div
-                                                key={index}
-                                                className="flex flex-col w-[30%] px-[25px] py-[20px] BlackWithLightGradient ContentCardShadow rounded-[10px]"
-                                            >
-                                                <div className="flex flex-col gap-[20px]">
-                                                    <div className=" w-full rounded-[10px] overflow-hidden shadow-[rgba(255,255,255,0.05)] shadow-xl">
-                                                        <Image
-                                                            src={design.designURL} // Access the designURL
-                                                            alt={`Design ${index + 1}`}
-                                                            layout="responsive"
-                                                            width={0}
-                                                            height={0}
-                                                        />
-                                                    </div>
-                                                    <div className="flex flex-col gap-[15px]">
-                                                        <div className="flex justify-between">
-                                                            <h3 className="font-semibold text-[17px]">{design.designName}</h3>
-                                                            <div className="PopupAttentionGradient PopupAttentionShadow rounded-[7px]">
-                                                                <h3 className="mx-[15px] my-[3px] text-[13px] tracking-[0.1px]">{design.designType}</h3>
-                                                            </div>
-                                                        </div>
-                                                        <h3 className="font-light text-[13px]">{design.designDescription}</h3>
-                                                        <div className="flex gap-[10px]">
-                                                            <div className="w-[15px] flex items-center">
-                                                                <Image
-                                                                    src="/Calendar Icon.png" // Access the designURL
-                                                                    alt={`Design ${index + 1}`}
-                                                                    layout="responsive"
-                                                                    width={0}
-                                                                    height={0}
-                                                                />
-                                                            </div>
-                                                            <h3 className="opacity-60 text-[13px] font-light">Uploaded on {design.dateCreated}</h3>
-                                                        </div>
-
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p>No designs available</p>
-                                    )}
+                                <div className="font-light text-sm hidden sm:block">Admin</div>
+                            </div>
+                            <div className="font-light text-sm hidden sm:block">/ Projects</div>
+                            <div className="font-light text-sm truncate max-w-[140px] sm:max-w-none">/ {projectName}</div>
+                        </div>
+                        <div className="inline-flex items-center gap-3">
+                            <div className="flex w-[45px] h-[45px] sm:w-[55px] sm:h-[55px] items-center justify-center relative rounded-[100px] BlackGradient ContentCardShadow hover:cursor-pointer">
+                                <div className="flex w-5 h-5 items-center justify-center px-[3px] absolute -top-[5px] -left-[4px] bg-[#6265f0] rounded-md">
+                                    <div className="font-normal text-xs">2</div>
+                                </div>
+                                <div className="w-[22px] sm:w-[25px]">
+                                    <Image src="/Notification Bell Icon.png" alt="Bell" layout="responsive" width={0} height={0} />
                                 </div>
                             </div>
+                            <Link href="/dashboard/settings" className="hidden sm:flex w-[129px] h-[55px] items-center justify-center gap-2.5 rounded-[15px] BlackGradient ContentCardShadow">
+                                <div className="font-light text-sm">Settings</div>
+                                <div className="w-[30px]">
+                                    <Image src="/Settings Icon.png" alt="Settings" layout="responsive" width={0} height={0} />
+                                </div>
+                            </Link>
                         </div>
+                    </div>
+
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto px-[20px] sm:px-[50px] pt-[30px] pb-[40px]">
+
+                        {/* Tab Nav */}
+                        <div className="flex items-center gap-[20px] sm:gap-[30px] mb-[30px] overflow-x-auto pb-[4px]">
+                            <Link href={`/dashboard/projects/${projectId}?projectId=${projectId}&userId=${userId}`}
+                                className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap hover:text-white">Overview</Link>
+                            <Link href={`/dashboard/projects/${projectId}/progress?projectId=${projectId}&userId=${userId}`}
+                                className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap hover:text-white">Progress</Link>
+                            <Link href={`/dashboard/projects/${projectId}/uploads?projectId=${projectId}&userId=${userId}`}
+                                className="font-normal text-base whitespace-nowrap border-b-2 border-[#725CF7] pb-[2px]">Uploads</Link>
+                            <div className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap opacity-40 cursor-not-allowed">Analytics</div>
+                        </div>
+
+                        {/* Header row */}
+                        <div className="flex items-center justify-between mb-[24px]">
+                            <div>
+                                <h1 className="text-[22px] sm:text-[26px] font-semibold">Design Uploads</h1>
+                                <p className="text-[13px] opacity-50 mt-[4px]">
+                                    {sectionDesigns.length + fullPageDesigns.length} design{sectionDesigns.length + fullPageDesigns.length !== 1 ? 's' : ''} uploaded for this project
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setIsPopupOpen(true)}
+                                className="flex items-center gap-[8px] PopupAttentionGradient PopupAttentionShadow px-[16px] sm:px-[20px] py-[10px] rounded-[12px] text-[13px] font-medium"
+                            >
+                                <span className="text-[16px] leading-none">+</span>
+                                <span className="hidden sm:inline">Add Design</span>
+                            </button>
+                        </div>
+
+                        {/* Type tabs */}
+                        <div className="flex items-center gap-[8px] mb-[24px]">
+                            {(['Sections', 'Full-Page'] as const).map(tab => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setSelectedTab(tab)}
+                                    className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[10px] text-[13px] font-medium transition-all
+                                        ${selectedTab === tab ? 'PopupAttentionGradient PopupAttentionShadow' : 'BlackWithLightGradient ContentCardShadow opacity-60 hover:opacity-90'}
+                                    `}
+                                >
+                                    {tab}
+                                    <span className={`text-[11px] px-[7px] py-[1px] rounded-full ${selectedTab === tab ? 'bg-white/20' : 'bg-white/10'}`}>
+                                        {tab === 'Sections' ? sectionDesigns.length : fullPageDesigns.length}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Design Grid */}
+                        {displayedDesigns.length === 0 ? (
+                            <div className="BlackGradient ContentCardShadow rounded-[24px] flex flex-col items-center justify-center py-[60px] gap-[16px]">
+                                <div className="text-[40px] opacity-20">🖼️</div>
+                                <p className="text-[15px] font-light opacity-40">No {selectedTab} designs uploaded yet</p>
+                                <button
+                                    onClick={() => setIsPopupOpen(true)}
+                                    className="PopupAttentionGradient PopupAttentionShadow px-[20px] py-[10px] rounded-[12px] text-[13px] font-medium mt-[4px]"
+                                >
+                                    Upload First Design
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[20px]">
+                                {displayedDesigns.map((design, i) => (
+                                    <div key={i} className="BlackGradient ContentCardShadow rounded-[20px] overflow-hidden flex flex-col">
+                                        {/* Image */}
+                                        <div
+                                            className="relative w-full bg-white/5 cursor-zoom-in overflow-hidden"
+                                            style={{ paddingBottom: '60%' }}
+                                            onClick={() => setLightboxURL(design.designURL)}
+                                        >
+                                            <img
+                                                src={design.designURL}
+                                                alt={design.designName}
+                                                className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                            />
+                                            {design.selectedDesign && (
+                                                <div className="absolute top-[10px] left-[10px] bg-green-500/90 text-white text-[10px] font-semibold px-[10px] py-[4px] rounded-full">
+                                                    ✓ Selected
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Info */}
+                                        <div className="px-[20px] py-[18px] flex flex-col gap-[10px]">
+                                            <div className="flex items-start justify-between gap-[10px]">
+                                                <h3 className="font-semibold text-[15px] leading-tight">{design.designName}</h3>
+                                                <span className="flex-shrink-0 text-[11px] PopupAttentionGradient PopupAttentionShadow px-[10px] py-[3px] rounded-full">
+                                                    {design.designType}
+                                                </span>
+                                            </div>
+                                            <p className="text-[12px] font-light opacity-50 leading-[1.5] line-clamp-2">{design.designDescription}</p>
+                                            <div className="flex items-center gap-[6px] mt-[2px]">
+                                                <span className="text-[11px] opacity-30">📅</span>
+                                                <p className="text-[11px] opacity-40 font-light">Uploaded {design.dateCreated}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 

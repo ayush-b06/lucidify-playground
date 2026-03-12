@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig'; // Adjust the import path based on your Firebase setup
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { db } from '../firebaseConfig';
 import Link from 'next/link';
 import Image from 'next/image';
 import DashboardClientSideNav from '@/components/DashboardClientSideNav';
@@ -12,190 +12,233 @@ interface DASHBOARDClientProjectDetailsUploadsProps {
     projectId: string;
 }
 
-interface ProjectDetails {
-    progress?: number;
-    recentActivity?: string[];
-    comments?: string[];
-    status?: number;
-    [key: string]: any;
+interface Design {
+    designName: string;
+    designDescription: string;
+    designURL: string;
+    designPage: 'Sections' | 'Full-Page';
+    designType: string;
+    dateCreated: string;
+    selectedDesign?: boolean;
 }
 
 const DASHBOARDClientProjectDetailsUploads = ({ userId, projectId }: DASHBOARDClientProjectDetailsUploadsProps) => {
-    const [projectDetails, setProjectDetails] = useState<any | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [projectName, setProjectName] = useState<string>('');
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectedTab, setSelectedTab] = useState<'Sections' | 'Full-Page'>('Sections');
+    const [sectionDesigns, setSectionDesigns] = useState<Design[]>([]);
+    const [fullPageDesigns, setFullPageDesigns] = useState<Design[]>([]);
+    const [lightboxURL, setLightboxURL] = useState<string | null>(null);
 
     useEffect(() => {
-        const fetchProjectDetails = async () => {
-            if (!userId || !projectId) {
-                return; // If userId or projectId is not available, do not fetch
-            }
-
+        const fetchAll = async () => {
+            if (!userId || !projectId) return;
             try {
-                // Reference to the specific user's project document
-                const projectDocRef = doc(db, 'users', userId, 'projects', projectId);
-                const projectDoc = await getDoc(projectDocRef);
+                const basePath = `users/${userId}/projects/${projectId}`;
 
-                if (projectDoc.exists()) {
-                    const projectData = projectDoc.data();
-                    setProjectDetails(projectData); // Store entire project data in state
-                } else {
-                    setError('Project not found.');
-                }
+                const projectDoc = await getDoc(doc(db, 'users', userId, 'projects', projectId));
+                if (projectDoc.exists()) setProjectName(projectDoc.data().projectName || '');
+                else { setError('Project not found.'); return; }
+
+                try {
+                    const snap = await getDocs(collection(db, `${basePath}/section web designs`));
+                    setSectionDesigns(snap.docs.map(d => d.data() as Design));
+                } catch { setSectionDesigns([]); }
+
+                try {
+                    const snap = await getDocs(collection(db, `${basePath}/full-page web designs`));
+                    setFullPageDesigns(snap.docs.map(d => d.data() as Design));
+                } catch { setFullPageDesigns([]); }
+
             } catch (err) {
-                console.error('Error fetching project details:', err);
-                setError('Failed to fetch project details.');
+                console.error(err);
+                setError('Failed to load project.');
             } finally {
                 setLoading(false);
             }
         };
+        fetchAll();
+    }, [userId, projectId]);
 
-        fetchProjectDetails();
-    }, [userId, projectId]); // Include userId and projectId in the dependency array
-
-    const handleProgressUpdate = async (newProgress: number, newActivity: string, newComment: string, newStatus: number) => {
-        if (!userId || !projectId) return; // Ensure we have userId and projectId
-
-        try {
-            // Reference to the specific user's project document
-            const projectDocRef = doc(db, 'users', userId, 'projects', projectId);
-
-            // Update the progress field in Firestore
-            await updateDoc(projectDocRef, {
-                progress: newProgress,
-                recentActivity: newActivity,
-                comments: newComment,
-                status: newStatus,
-            });
-
-            // Update local state to reflect new progress and activities
-            setProjectDetails((prevDetails: ProjectDetails) => ({
-                ...prevDetails,
-                progress: newProgress, // Update the progress in the local state
-                recentActivity: [...recentActivity, newActivity], // Update the local state
-                comments: [...comments, newComment], // Update the local state
-                status: newStatus, // Update the local state
-            }));
-
-
-        } catch (err) {
-            console.error('Error updating progress:', err);
-        }
-    };
+    const displayedDesigns = selectedTab === 'Sections' ? sectionDesigns : fullPageDesigns;
 
     if (loading) {
-        return <div>Loading project details...</div>;
+        return (
+            <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
+                <DashboardClientSideNav highlight="projects" />
+                <div className="flex-1 flex items-center justify-center pt-[60px] xl:pt-0">
+                    <p className="opacity-40 font-light text-[14px]">Loading designs...</p>
+                </div>
+            </div>
+        );
     }
 
     if (error) {
-        return <div>{error}</div>;
+        return (
+            <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
+                <DashboardClientSideNav highlight="projects" />
+                <div className="flex-1 flex items-center justify-center pt-[60px] xl:pt-0">
+                    <p className="text-red-400 text-[14px]">{error}</p>
+                </div>
+            </div>
+        );
     }
 
-    // Access project data using projectDetails, assuming projectName and projectDescription are fields in the document
-    const { projectName, progress, recentActivity, comments } = projectDetails || {};
-
     return (
-        <div className="flex h-screen DashboardBackgroundGradient">
-            {/* Left Sidebar */}
-            <DashboardClientSideNav highlight="projects" />
-
-            {/* Right Side (Main Content) */}
-            <div className="flex-1 flex flex-col">
-                <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
-                <div className="flex min-w-min items-center justify-between px-[50px] py-6">
-                    <div className="inline-flex items-center gap-[5px]">
-                        <div className="inline-flex items-center gap-[5px] opacity-40">
-                            <div className="w-[15px]">
-                                <Image
-                                    src="/Home Icon.png"
-                                    alt="Home Icon"
-                                    layout="responsive"
-                                    width={0}
-                                    height={0}
-                                />
-                            </div>
-                            <div className="font-light text-sm">Home</div>
-                        </div>
-                        <div className="inline-flex items-center gap-[5px]">
-                            <div className="font-light text-sm">/ Projects</div>
-                            <div className="font-light text-sm">/ {projectName}</div>
-                        </div>
-                    </div>
-                    <div className="inline-flex items-center gap-5">
-                        <div className="flex w-[55px] h-[55px] items-center justify-center gap-2.5 relative rounded-[100px] BlackGradient ContentCardShadow hover:cursor-pointer">
-                            <div className="flex flex-col w-5 h-5 items-center justify-center gap-2.5 px-[3px] py-0 absolute -top-[5px] -left-[4px] bg-[#6265f0] rounded-md">
-                                <div className=" font-normal text-xs">2</div>
-                            </div>
-                            <div className=" w-[25px]">
-                                <Image
-                                    src="/Notification Bell Icon.png"
-                                    alt="Bell Icon"
-                                    layout="responsive"
-                                    width={0}
-                                    height={0}
-                                />
-                            </div>
-                        </div>
-                        <Link
-                            href="/dashboard/settings"
-                            className="flex w-[129px] h-[55px] items-center justify-center gap-2.5 px-0 py-[15px] rounded-[15px] BlackGradient ContentCardShadow"
-                        >
-                            <div className="font-light text-sm">Settings</div>
-                            <div className="w-[30px]">
-                                <Image
-                                    src="/Settings Icon.png"
-                                    alt="Settings Icon"
-                                    layout="responsive"
-                                    width={0}
-                                    height={0}
-                                />
-                            </div>
-                        </Link>
+        <>
+            {/* Lightbox */}
+            {lightboxURL && (
+                <div
+                    className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-[20px]"
+                    onClick={() => setLightboxURL(null)}
+                >
+                    <div className="relative max-w-[90vw] max-h-[90vh]" onClick={e => e.stopPropagation()}>
+                        <img src={lightboxURL} alt="Design preview" className="max-w-full max-h-[85vh] rounded-[16px] object-contain" />
+                        <button
+                            onClick={() => setLightboxURL(null)}
+                            className="absolute -top-[14px] -right-[14px] w-[32px] h-[32px] rounded-full BlackGradient ContentCardShadow flex items-center justify-center text-[16px] opacity-70 hover:opacity-100"
+                        >✕</button>
                     </div>
                 </div>
+            )}
 
-                <div className="flex w-full justify-center">
-                    <div className="flex flex-col gap-[20px] relative w-full mx-[50px] my-[30px]">
-                        <div className="inline-flex items-center gap-[30px] relative">
-                            <Link
-                                href={`/dashboard/projects/${projectId}?projectId=${projectId}&userId=${userId}`}
-                                className="relative font-normal text-[#ffffff66] text-base hover:cursor-pointer">
-                                Overview
-                            </Link>
-                            <Link
-                                href={`/dashboard/projects/${projectId}/progress?projectId=${projectId}&userId=${userId}`}
-                                className="relative font-normal text-[#ffffff66] text-base hover:cursor-pointer">
-                                Progress
-                            </Link>
+            <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
+                <DashboardClientSideNav highlight="projects" />
 
-                            <Link
-                                href={`/dashboard/projects/${projectId}/uploads?projectId=${projectId}&userId=${userId}`}
-                                className="relative font-normal text-base hover:cursor-pointer">Uploads</Link>
-                            <div className="relative font-normal text-[#ffffff66] text-base hover:cursor-pointer">Analytics</div>
-                            <Link
-                                href={`/dashboard/projects/${projectId}/edit?projectId=${projectId}&userId=${userId}`}
-                                className="relative font-normal text-[#ffffff66] text-base hover:cursor-pointer flex items-center gap-[5px]">
-                                <div className="w-[15px] opacity-40">
-                                    <Image
-                                        src="/Edit Icon.png"
-                                        alt="Edit Icon"
-                                        layout="responsive"
-                                        width={0}
-                                        height={0}
-                                    />
+                <div className="flex-1 flex flex-col pt-[60px] xl:pt-0 min-h-0 overflow-hidden">
+                    <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
+
+                    {/* Top Bar */}
+                    <div className="flex items-center justify-between px-[20px] sm:px-[50px] py-6 flex-shrink-0">
+                        <div className="inline-flex items-center gap-[5px]">
+                            <div className="inline-flex items-center gap-[5px] opacity-40">
+                                <div className="w-[15px]">
+                                    <Image src="/Home Icon.png" alt="Home" layout="responsive" width={0} height={0} />
                                 </div>
-                                Edit
+                                <div className="font-light text-sm hidden sm:block">Home</div>
+                            </div>
+                            <div className="font-light text-sm hidden sm:block">/ Projects</div>
+                            <div className="font-light text-sm truncate max-w-[140px] sm:max-w-none">/ {projectName}</div>
+                        </div>
+                        <div className="inline-flex items-center gap-3">
+                            <div className="flex w-[45px] h-[45px] sm:w-[55px] sm:h-[55px] items-center justify-center relative rounded-[100px] BlackGradient ContentCardShadow hover:cursor-pointer">
+                                <div className="flex w-5 h-5 items-center justify-center px-[3px] absolute -top-[5px] -left-[4px] bg-[#6265f0] rounded-md">
+                                    <div className="font-normal text-xs">2</div>
+                                </div>
+                                <div className="w-[22px] sm:w-[25px]">
+                                    <Image src="/Notification Bell Icon.png" alt="Bell" layout="responsive" width={0} height={0} />
+                                </div>
+                            </div>
+                            <Link href="/dashboard/settings" className="hidden sm:flex w-[129px] h-[55px] items-center justify-center gap-2.5 rounded-[15px] BlackGradient ContentCardShadow">
+                                <div className="font-light text-sm">Settings</div>
+                                <div className="w-[30px]">
+                                    <Image src="/Settings Icon.png" alt="Settings" layout="responsive" width={0} height={0} />
+                                </div>
                             </Link>
                         </div>
-                        <div className="flex w-full CardGradient ContentCardShadow rounded-[15px]">
-                            <div className="mx-[35px] mt-[25px] flex flex-col">
-                                <h1 className="text-[24px] font-semibold ">Recent Website Designs</h1>
-                            </div>
+                    </div>
+
+                    {/* Scrollable Content */}
+                    <div className="flex-1 overflow-y-auto px-[20px] sm:px-[50px] pt-[30px] pb-[40px]">
+
+                        {/* Tab Nav */}
+                        <div className="flex items-center gap-[20px] sm:gap-[30px] mb-[30px] overflow-x-auto pb-[4px]">
+                            <Link href={`/dashboard/projects/${projectId}?projectId=${projectId}&userId=${userId}`}
+                                className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap hover:text-white">Overview</Link>
+                            <Link href={`/dashboard/projects/${projectId}/progress?projectId=${projectId}&userId=${userId}`}
+                                className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap hover:text-white">Progress</Link>
+                            <Link href={`/dashboard/projects/${projectId}/uploads?projectId=${projectId}&userId=${userId}`}
+                                className="font-normal text-base whitespace-nowrap border-b-2 border-[#725CF7] pb-[2px]">Uploads</Link>
+                            <div className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap opacity-40 cursor-not-allowed">Analytics</div>
                         </div>
+
+                        {/* Header */}
+                        <div className="mb-[24px]">
+                            <h1 className="text-[22px] sm:text-[26px] font-semibold">Website Designs</h1>
+                            <p className="text-[13px] opacity-50 mt-[4px]">
+                                {sectionDesigns.length + fullPageDesigns.length > 0
+                                    ? `${sectionDesigns.length + fullPageDesigns.length} design${sectionDesigns.length + fullPageDesigns.length !== 1 ? 's' : ''} shared by Lucidify`
+                                    : 'Designs will appear here once Lucidify uploads them'}
+                            </p>
+                        </div>
+
+                        {/* Type tabs */}
+                        <div className="flex items-center gap-[8px] mb-[24px]">
+                            {(['Sections', 'Full-Page'] as const).map(tab => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setSelectedTab(tab)}
+                                    className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[10px] text-[13px] font-medium transition-all
+                                        ${selectedTab === tab ? 'PopupAttentionGradient PopupAttentionShadow' : 'BlackWithLightGradient ContentCardShadow opacity-60 hover:opacity-90'}
+                                    `}
+                                >
+                                    {tab}
+                                    <span className={`text-[11px] px-[7px] py-[1px] rounded-full ${selectedTab === tab ? 'bg-white/20' : 'bg-white/10'}`}>
+                                        {tab === 'Sections' ? sectionDesigns.length : fullPageDesigns.length}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Design Grid */}
+                        {displayedDesigns.length === 0 ? (
+                            <div className="BlackGradient ContentCardShadow rounded-[24px] flex flex-col items-center justify-center py-[60px] gap-[12px]">
+                                <div className="text-[40px] opacity-20">🖼️</div>
+                                <p className="text-[15px] font-light opacity-40">No {selectedTab} designs yet</p>
+                                <p className="text-[12px] opacity-30 text-center max-w-[280px]">
+                                    Lucidify will upload your website designs here for you to review.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[20px]">
+                                {displayedDesigns.map((design, i) => (
+                                    <div key={i} className="BlackGradient ContentCardShadow rounded-[20px] overflow-hidden flex flex-col">
+                                        {/* Image */}
+                                        <div
+                                            className="relative w-full bg-white/5 cursor-zoom-in overflow-hidden"
+                                            style={{ paddingBottom: '60%' }}
+                                            onClick={() => setLightboxURL(design.designURL)}
+                                        >
+                                            <img
+                                                src={design.designURL}
+                                                alt={design.designName}
+                                                className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                            />
+                                            {design.selectedDesign && (
+                                                <div className="absolute top-[10px] left-[10px] bg-green-500/90 text-white text-[10px] font-semibold px-[10px] py-[4px] rounded-full">
+                                                    ✓ Selected
+                                                </div>
+                                            )}
+                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/40">
+                                                <span className="text-[13px] font-medium bg-white/10 backdrop-blur-sm px-[14px] py-[8px] rounded-full">
+                                                    Click to enlarge
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        {/* Info */}
+                                        <div className="px-[20px] py-[18px] flex flex-col gap-[10px]">
+                                            <div className="flex items-start justify-between gap-[10px]">
+                                                <h3 className="font-semibold text-[15px] leading-tight">{design.designName}</h3>
+                                                <span className="flex-shrink-0 text-[11px] PopupAttentionGradient PopupAttentionShadow px-[10px] py-[3px] rounded-full">
+                                                    {design.designType}
+                                                </span>
+                                            </div>
+                                            <p className="text-[12px] font-light opacity-50 leading-[1.5] line-clamp-2">{design.designDescription}</p>
+                                            <div className="flex items-center gap-[6px] mt-[2px]">
+                                                <span className="text-[11px] opacity-30">📅</span>
+                                                <p className="text-[11px] opacity-40 font-light">Uploaded {design.dateCreated}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 
