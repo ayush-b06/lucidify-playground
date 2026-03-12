@@ -5,6 +5,7 @@ import { collection, doc, getDocs, onSnapshot } from 'firebase/firestore';
 import Image from 'next/image';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
+import NotificationBell from './NotificationBell';
 
 type DashboardSideNAdminavProps = {
     highlight: "getStarted" | "dashboard" | "projects" | "messages" | "transactions" | "none";
@@ -69,19 +70,22 @@ const DashboardAdminSideNav: React.FC<DashboardSideNAdminavProps> = ({ highlight
     return (
         <>
             {/* Mobile Top Bar */}
-            <div className="xl:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-[20px] h-[60px] DashboardBackgroundGradient" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="xl:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-[20px] h-[60px] bg-black" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
                 <Link href="/dashboard/" className="relative w-[110px]">
                     <Image src="/Lucidify white logo w designs.png" alt="Lucidify Logo" layout="responsive" width={0} height={0} />
                 </Link>
-                <button
-                    onClick={() => setIsOpen(true)}
-                    className="flex flex-col justify-center items-center gap-[5px] w-[40px] h-[40px] rounded-[10px] BlackWithLightGradient ContentCardShadow"
-                    aria-label="Open menu"
-                >
-                    <span className="block w-[18px] h-[2px] bg-white rounded-full" />
-                    <span className="block w-[18px] h-[2px] bg-white rounded-full" />
-                    <span className="block w-[12px] h-[2px] bg-white rounded-full ml-[3px]" />
-                </button>
+                <div className="flex items-center gap-[10px]">
+                    <NotificationBell />
+                    <button
+                        onClick={() => setIsOpen(true)}
+                        className="flex flex-col justify-center items-center gap-[5px] w-[40px] h-[40px] rounded-[10px] BlackWithLightGradient ContentCardShadow"
+                        aria-label="Open menu"
+                    >
+                        <span className="block w-[18px] h-[2px] bg-white rounded-full" />
+                        <span className="block w-[18px] h-[2px] bg-white rounded-full" />
+                        <span className="block w-[12px] h-[2px] bg-white rounded-full ml-[3px]" />
+                    </button>
+                </div>
             </div>
 
             {/* Mobile Drawer Overlay */}

@@ -168,7 +168,7 @@ const DASHBOARDClientProjects = () => {
             <div className="flex-1 flex flex-col pt-[60px] xl:pt-0 min-h-0 overflow-hidden">
                 <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
                 <div className="flex min-w-min items-center justify-between px-[20px] sm:px-[50px] py-6 flex-shrink-0">
-                    <div className="inline-flex items-center gap-[5px]">
+                    <div className="hidden xl:inline-flex items-center gap-[5px]">
                         <div className="inline-flex items-center gap-[5px] opacity-40">
                             <div className="w-[15px]">
                                 <Image
@@ -190,7 +190,7 @@ const DASHBOARDClientProjects = () => {
                         </div>
                     </div>
                     <div className="inline-flex items-center gap-3">
-                        <NotificationBell />
+                        <span className="hidden xl:block"><NotificationBell /></span>
                         <Link
                             href="/dashboard/settings"
                             className="hidden sm:flex w-[129px] h-[55px] items-center justify-center gap-2.5 px-0 py-[15px] rounded-[15px] BlackGradient ContentCardShadow">

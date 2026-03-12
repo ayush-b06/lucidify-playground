@@ -381,7 +381,7 @@ const DASHBOARDClientMessages = () => {
 
                     {/* Top Bar */}
                     <div className="flex items-center justify-between px-[20px] sm:px-[50px] py-6 flex-shrink-0">
-                        <div className="inline-flex items-center gap-[5px]">
+                        <div className="hidden xl:inline-flex items-center gap-[5px]">
                             <div className="inline-flex items-center gap-[5px] opacity-40">
                                 <div className="w-[15px]">
                                     <Image src="/Home Icon.png" alt="Home Icon" layout="responsive" width={0} height={0} />
@@ -391,7 +391,7 @@ const DASHBOARDClientMessages = () => {
                             <div className="font-light text-sm">/ Messages</div>
                         </div>
                         <div className="inline-flex items-center gap-3 sm:gap-5">
-                            <NotificationBell />
+                            <span className="hidden xl:block"><NotificationBell /></span>
                             <Link href="/dashboard/settings" className="hidden sm:flex w-[129px] h-[55px] items-center justify-center gap-2.5 rounded-[15px] BlackGradient ContentCardShadow">
                                 <div className="font-light text-sm">Settings</div>
                                 <div className="w-[30px]">

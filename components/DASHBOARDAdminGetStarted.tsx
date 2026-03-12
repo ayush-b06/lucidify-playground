@@ -75,7 +75,7 @@ const DASHBOARDAdminGetStarted = () => {
 
 
         <div className="flex min-w-min items-center justify-between px-[50px] py-6">
-          <div className="inline-flex items-center gap-[5px]">
+          <div className="hidden xl:inline-flex items-center gap-[5px]">
             <div className="inline-flex items-center gap-[5px] opacity-40">
               <div className="w-[15px]">
                 <Image
@@ -97,7 +97,7 @@ const DASHBOARDAdminGetStarted = () => {
             </div>
           </div>
           <div className="inline-flex items-center gap-5">
-            <NotificationBell />
+            <span className="hidden xl:block"><NotificationBell /></span>
             <Link
               href="/dashboard/settings"
               className="flex w-[129px] h-[55px] items-center justify-center gap-2.5 px-0 py-[15px]  rounded-[15px] BlackGradient ContentCardShadow">

@@ -156,7 +156,7 @@ const DASHBOARDClientProjectDetails = ({ userId, projectId }: DASHBOARDClientPro
 
                 {/* Top Bar */}
                 <div className="flex-shrink-0 flex items-center justify-between px-[20px] sm:px-[50px] py-6">
-                    <div className="inline-flex items-center gap-[5px] min-w-0">
+                    <div className="hidden xl:inline-flex items-center gap-[5px] min-w-0">
                         <div className="inline-flex items-center gap-[5px] opacity-40 flex-shrink-0">
                             <div className="w-[15px]">
                                 <Image
@@ -175,7 +175,7 @@ const DASHBOARDClientProjectDetails = ({ userId, projectId }: DASHBOARDClientPro
                         </div>
                     </div>
                     <div className="inline-flex items-center gap-4 flex-shrink-0">
-                        <NotificationBell />
+                        <span className="hidden xl:block"><NotificationBell /></span>
                         <Link
                             href="/dashboard/settings"
                             className="hidden sm:flex w-[129px] h-[55px] items-center justify-center gap-2.5 px-0 py-[15px] rounded-[15px] BlackGradient ContentCardShadow"

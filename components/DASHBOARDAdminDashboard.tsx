@@ -108,7 +108,7 @@ const AdminDashboard = () => {
 
         {/* Top Bar */}
         <div className="flex items-center justify-between px-[30px] lg:px-[50px] py-6 flex-shrink-0">
-          <div className="inline-flex items-center gap-[5px]">
+          <div className="hidden xl:inline-flex items-center gap-[5px]">
             <div className="inline-flex items-center gap-[5px] opacity-40">
               <div className="w-[15px]"><Image src="/Home Icon.png" alt="Home" layout="responsive" width={0} height={0} /></div>
               <div className="font-light text-sm">Home</div>
@@ -116,7 +116,7 @@ const AdminDashboard = () => {
             <div className="font-light text-sm">/ Dashboard</div>
           </div>
           <div className="inline-flex items-center gap-5">
-            <NotificationBell />
+            <span className="hidden xl:block"><NotificationBell /></span>
             <Link href="/dashboard/settings" className="flex w-[129px] h-[55px] items-center justify-center gap-2.5 rounded-[15px] BlackGradient ContentCardShadow">
               <div className="font-light text-sm">Settings</div>
               <div className="w-[30px]"><Image src="/Settings Icon.png" alt="Settings" layout="responsive" width={0} height={0} /></div>
