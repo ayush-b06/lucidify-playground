@@ -811,6 +811,34 @@ svg {
 }
 
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.FadeInUp {
+  animation: fadeInUp 0.75s cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+.FadeInUp1 { animation: fadeInUp 0.75s 0.1s cubic-bezier(0.25, 1, 0.5, 1) both; }
+.FadeInUp2 { animation: fadeInUp 0.75s 0.2s cubic-bezier(0.25, 1, 0.5, 1) both; }
+.FadeInUp3 { animation: fadeInUp 0.75s 0.3s cubic-bezier(0.25, 1, 0.5, 1) both; }
+.FadeInUp4 { animation: fadeInUp 0.75s 0.4s cubic-bezier(0.25, 1, 0.5, 1) both; }
+.FadeInUp5 { animation: fadeInUp 0.75s 0.5s cubic-bezier(0.25, 1, 0.5, 1) both; }
+
+.DashboardPreviewGlow {
+  box-shadow:
+    0 0 60px rgba(114, 92, 247, 0.12),
+    0 0 120px rgba(98, 101, 240, 0.08),
+    0 40px 80px rgba(0, 0, 0, 0.6);
+}
+
 @keyframes slideDownFade {
   0% {
     transform: translateY(-150px);

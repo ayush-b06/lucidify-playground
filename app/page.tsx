@@ -1,4 +1,5 @@
 import CaseStudySection from "@/components/CaseStudySection";
+import DashboardPreviewSection from "@/components/DashboardPreviewSection";
 import FeaturesSection from "@/components/FeaturesSection";
 import Footer from "@/components/Footer";
 import GetStartedSection from "@/components/GetStartedSection";
@@ -14,6 +15,7 @@ export default function HomePage() {
       <Navbar />
       <Main>
         <HeroSection />
+        <DashboardPreviewSection />
         <CaseStudySection />
         <ProcessSection />
         <QuoteSection />
@@ -22,6 +24,5 @@ export default function HomePage() {
       </Main>
       <Footer />
     </>
-
   );
 }
