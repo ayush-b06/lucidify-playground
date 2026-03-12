@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { collection, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 import DashboardClientSideNav from './DashboardClientSideNav';
-import NotificationBell from './NotificationBell';
-import Image from 'next/image';
+import DashboardTopBar from './DashboardTopBar';
 import Link from 'next/link';
 
 interface Project {
@@ -72,29 +71,7 @@ const DASHBOARDClientTransactions = () => {
             <DashboardClientSideNav highlight="transactions" />
 
             <div className="flex-1 flex flex-col pt-[60px] xl:pt-0 min-h-0 overflow-hidden">
-                <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
-
-                {/* Top Bar */}
-                <div className="flex items-center justify-between px-[20px] sm:px-[50px] py-6 flex-shrink-0">
-                    <div className="hidden xl:inline-flex items-center gap-[5px]">
-                        <div className="inline-flex items-center gap-[5px] opacity-40">
-                            <div className="w-[15px]">
-                                <Image src="/Home Icon.png" alt="Home" layout="responsive" width={0} height={0} />
-                            </div>
-                            <div className="font-light text-sm hidden sm:block">Home</div>
-                        </div>
-                        <div className="font-light text-sm">/ Transactions</div>
-                    </div>
-                    <div className="inline-flex items-center gap-3">
-                        <span className="hidden xl:block"><NotificationBell /></span>
-                        <Link href="/dashboard/settings" className="hidden sm:flex w-[129px] h-[55px] items-center justify-center gap-2.5 rounded-[15px] BlackGradient ContentCardShadow">
-                            <div className="font-light text-sm">Settings</div>
-                            <div className="w-[30px]">
-                                <Image src="/Settings Icon.png" alt="Settings" layout="responsive" width={0} height={0} />
-                            </div>
-                        </Link>
-                    </div>
-                </div>
+                <DashboardTopBar title="Transactions" />
 
                 {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto px-[20px] sm:px-[50px] pt-[30px] pb-[40px]">

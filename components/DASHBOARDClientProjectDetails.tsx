@@ -6,7 +6,7 @@ import { db } from '../firebaseConfig';
 import Link from 'next/link';
 import Image from 'next/image';
 import DashboardClientSideNav from './DashboardClientSideNav';
-import NotificationBell from './NotificationBell';
+import DashboardTopBar from './DashboardTopBar';
 
 interface DASHBOARDClientProjectDetailsProps {
     userId: string;
@@ -152,47 +152,7 @@ const DASHBOARDClientProjectDetails = ({ userId, projectId }: DASHBOARDClientPro
 
             {/* Right Side */}
             <div className="flex-1 flex flex-col pt-[60px] xl:pt-0 min-h-0 overflow-hidden">
-                <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
-
-                {/* Top Bar */}
-                <div className="flex-shrink-0 flex items-center justify-between px-[20px] sm:px-[50px] py-6">
-                    <div className="hidden xl:inline-flex items-center gap-[5px] min-w-0">
-                        <div className="inline-flex items-center gap-[5px] opacity-40 flex-shrink-0">
-                            <div className="w-[15px]">
-                                <Image
-                                    src="/Home Icon.png"
-                                    alt="Home Icon"
-                                    layout="responsive"
-                                    width={0}
-                                    height={0}
-                                />
-                            </div>
-                            <div className="font-light text-sm">Home</div>
-                        </div>
-                        <div className="inline-flex items-center gap-[5px] min-w-0">
-                            <div className="font-light text-sm flex-shrink-0">/ Projects /</div>
-                            <div className="font-light text-sm truncate max-w-[120px] sm:max-w-none">{projectName}</div>
-                        </div>
-                    </div>
-                    <div className="inline-flex items-center gap-4 flex-shrink-0">
-                        <span className="hidden xl:block"><NotificationBell /></span>
-                        <Link
-                            href="/dashboard/settings"
-                            className="hidden sm:flex w-[129px] h-[55px] items-center justify-center gap-2.5 px-0 py-[15px] rounded-[15px] BlackGradient ContentCardShadow"
-                        >
-                            <div className="font-light text-sm">Settings</div>
-                            <div className="w-[30px]">
-                                <Image
-                                    src="/Settings Icon.png"
-                                    alt="Settings Icon"
-                                    layout="responsive"
-                                    width={0}
-                                    height={0}
-                                />
-                            </div>
-                        </Link>
-                    </div>
-                </div>
+                <DashboardTopBar title="Project Details" />
 
                 {/* Scrollable Area */}
                 <div className="flex-1 overflow-y-auto px-[20px] sm:px-[50px] pt-[30px] pb-[40px]">

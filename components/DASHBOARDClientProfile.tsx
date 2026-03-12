@@ -6,8 +6,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../firebaseConfig';
 import DashboardClientSideNav from './DashboardClientSideNav';
 import Image from 'next/image';
-import Link from 'next/link';
-import NotificationBell from './NotificationBell';
+import DashboardTopBar from './DashboardTopBar';
 
 const AVATARS = Array.from({ length: 24 }, (_, i) => `Avatar ${i + 1}.png`);
 
@@ -217,29 +216,7 @@ const DASHBOARDClientProfile = () => {
                 <DashboardClientSideNav highlight="none" />
 
                 <div className="flex-1 flex flex-col pt-[60px] xl:pt-0 min-h-0 overflow-hidden">
-                    <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
-
-                    {/* Top Bar */}
-                    <div className="flex items-center justify-between px-[20px] sm:px-[50px] py-6 flex-shrink-0">
-                        <div className="hidden xl:inline-flex items-center gap-[5px]">
-                            <div className="inline-flex items-center gap-[5px] opacity-40">
-                                <div className="w-[15px]">
-                                    <Image src="/Home Icon.png" alt="Home" layout="responsive" width={0} height={0} />
-                                </div>
-                                <div className="font-light text-sm hidden sm:block">Home</div>
-                            </div>
-                            <div className="font-light text-sm">/ Profile</div>
-                        </div>
-                        <div className="inline-flex items-center gap-3">
-                            <span className="hidden xl:block"><NotificationBell /></span>
-                            <Link href="/dashboard/settings" className="hidden sm:flex w-[129px] h-[55px] items-center justify-center gap-2.5 rounded-[15px] BlackGradient ContentCardShadow">
-                                <div className="font-light text-sm">Settings</div>
-                                <div className="w-[30px]">
-                                    <Image src="/Settings Icon.png" alt="Settings" layout="responsive" width={0} height={0} />
-                                </div>
-                            </Link>
-                        </div>
-                    </div>
+                    <DashboardTopBar title="Profile" />
 
                     {/* Scrollable Content */}
                     <div className="flex-1 overflow-y-auto px-[20px] sm:px-[50px] pt-[30px] pb-[40px]">

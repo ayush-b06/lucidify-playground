@@ -4,9 +4,7 @@ import { collection, doc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { db } from '../firebaseConfig'; // Firestore instance
 import DashboardClientSideNav from './DashboardClientSideNav';
-import Image from 'next/image';
-import Link from 'next/link';
-import NotificationBell from './NotificationBell';
+import DashboardTopBar from './DashboardTopBar';
 
 interface Project {
   name: string;
@@ -71,51 +69,7 @@ const DASHBOARDClientGetStarted = () => {
 
       {/* Right Side (Main Content) */}
       <div className="flex-1 flex flex-col pt-[60px] xl:pt-0"> {/* Takes up remaining space */}
-        <div className="absolute BottomGradientBorder left-0 top-[103px] w-full" />
-
-
-        <div className="flex min-w-min items-center justify-between px-[50px] py-6">
-          <div className="hidden xl:inline-flex items-center gap-[5px]">
-            <div className="inline-flex items-center gap-[5px] opacity-40">
-              <div className="w-[15px]">
-                <Image
-                  src="/Home Icon.png"
-                  alt="Home Icon"
-                  layout="responsive"
-                  width={0}
-                  height={0}
-                />
-              </div>
-              <div className="w-fit mt-[-1.00px] font-light text-sm tracking-[0] leading-[normal]">
-                Home
-              </div>
-            </div>
-            <div className="inline-flex items-center gap-[5px]">
-              <div className=" w-fit mt-[-1.00px] font-light text-sm tracking-[0] leading-[normal]">
-                / Dashboard
-              </div>
-            </div>
-          </div>
-          <div className="inline-flex items-center gap-5">
-            <span className="hidden xl:block"><NotificationBell /></span>
-            <Link
-              href="/dashboard/settings"
-              className="flex w-[129px] h-[55px] items-center justify-center gap-2.5 px-0 py-[15px]  rounded-[15px] BlackGradient ContentCardShadow">
-              <div className=" w-fit font-light text-sm tracking-[0] leading-[normal]">
-                Settings
-              </div>
-              <div className=" w-[30px]">
-                <Image
-                  src="/Settings Icon.png"
-                  alt="Settings Icon"
-                  layout="responsive"
-                  width={0}
-                  height={0}
-                />
-              </div>
-            </Link>
-          </div>
-        </div>
+        <DashboardTopBar title="Get Started" />
 
 
         <div className="flex w-full justify-center">
