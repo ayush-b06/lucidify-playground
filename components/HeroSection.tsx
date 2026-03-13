@@ -17,16 +17,45 @@ const stats = [
   { value: '100%', label: 'Client Satisfaction' },
 ];
 
+// Deterministic particle positions to avoid SSR hydration mismatch
+const particles = Array.from({ length: 12 }, (_, i) => ({
+  left: `${(i * 37 + 11) % 92}%`,
+  top: `${(i * 53 + 17) % 88}%`,
+  size: 1.5 + (i % 3) * 0.5,
+  delay: `${(i * 0.4) % 3}s`,
+  duration: `${3 + (i % 4)}s`,
+}));
+
 const HeroSection = () => {
   const orb1Ref = useRef<HTMLDivElement>(null);
   const orb2Ref = useRef<HTMLDivElement>(null);
   const orb3Ref = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const chevronRef = useRef<HTMLDivElement>(null);
+  const magnetRef = useRef<HTMLAnchorElement>(null);
+
+  const mouseX = useRef(0);
+  const mouseY = useRef(0);
+  const scrollP = useRef(0);
+
+  const applyContentTransform = () => {
+    if (!contentRef.current) return;
+    const scrollOffset = scrollP.current * 30;
+    const opacity = Math.max(0, 1 - scrollP.current * 1.4);
+    contentRef.current.style.transform = `translate(${mouseX.current}px, ${mouseY.current + scrollOffset}px)`;
+    contentRef.current.style.opacity = String(opacity);
+    if (chevronRef.current) {
+      chevronRef.current.style.opacity = String(opacity * 0.4);
+    }
+  };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       const x = (e.clientX / window.innerWidth - 0.5) * 2;
       const y = (e.clientY / window.innerHeight - 0.5) * 2;
+
+      mouseX.current = x * 5;
+      mouseY.current = y * 3;
 
       if (orb1Ref.current)
         orb1Ref.current.style.transform = `translate(${x * -20}px, ${y * -16}px)`;
@@ -34,19 +63,67 @@ const HeroSection = () => {
         orb2Ref.current.style.transform = `translate(${x * 14}px, ${y * 10}px)`;
       if (orb3Ref.current)
         orb3Ref.current.style.transform = `translate(${x * -8}px, ${y * 18}px)`;
-      if (contentRef.current)
-        contentRef.current.style.transform = `translate(${x * 5}px, ${y * 3}px)`;
+
+      applyContentTransform();
+
+      // Magnetic effect on "Get a Demo" button
+      const btn = magnetRef.current;
+      if (btn) {
+        const rect = btn.getBoundingClientRect();
+        const bx = e.clientX - (rect.left + rect.width / 2);
+        const by = e.clientY - (rect.top + rect.height / 2);
+        const dist = Math.sqrt(bx * bx + by * by);
+        const threshold = 80;
+        if (dist < threshold) {
+          const strength = (1 - dist / threshold) * 0.35;
+          btn.style.transform = `translate(${bx * strength}px, ${by * strength}px) translateY(-2px)`;
+        } else {
+          btn.style.transform = 'translate(0px, 0px) translateY(0px)';
+        }
+      }
+    };
+
+    const handleScroll = () => {
+      scrollP.current = Math.min(window.scrollY / 500, 1);
+      applyContentTransform();
+
+      const s = scrollP.current;
+      if (orb1Ref.current) orb1Ref.current.style.opacity = String(1 - s * 0.8);
+      if (orb2Ref.current) orb2Ref.current.style.opacity = String(1 - s * 0.8);
+      if (orb3Ref.current) orb3Ref.current.style.opacity = String(1 - s * 0.8);
     };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <section className={`${poppins.className} items-center`}>
       <div className="flex justify-center rounded-[50px] mx-auto BackgroundGradient relative overflow-hidden">
 
-        {/* Floating orbs — outer div handles JS translate, inner handles CSS pulse */}
+        {/* Floating particles */}
+        {particles.map((p, i) => (
+          <div
+            key={i}
+            className="absolute pointer-events-none rounded-full HeroParticle"
+            style={{
+              left: p.left,
+              top: p.top,
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              background: 'rgba(255,255,255,0.35)',
+              animationDelay: p.delay,
+              animationDuration: p.duration,
+            }}
+          />
+        ))}
+
+        {/* Floating orbs */}
         <div ref={orb1Ref} className="absolute pointer-events-none" style={{ top: '-120px', left: '-180px', width: '500px', height: '500px' }}>
           <div className="HeroOrbInner" style={{ background: 'radial-gradient(circle, rgba(82,64,201,0.5) 0%, transparent 65%)', animationDelay: '0s' }} />
         </div>
@@ -61,7 +138,7 @@ const HeroSection = () => {
         <div
           ref={contentRef}
           className="flex items-center w-full flex-col mt-[125px] sm:mb-[150px] mb-[125px] 2xl:mt-[125px] 2xl:mb-[150px] xl:mt-[80px] xl:mb-[125px] lg:mt-[70px] lg:mb-[100px] max-w-[650px]"
-          style={{ transition: 'transform 0.1s linear' }}
+          style={{ transition: 'transform 0.08s linear, opacity 0.08s linear' }}
         >
           {/* Badge */}
           <div className="FadeInUp flex justify-center items-center border-solid border border-1 border-[#2F2F2F] rounded-full">
@@ -94,19 +171,15 @@ const HeroSection = () => {
           {/* CTA buttons */}
           <div className="FadeInUp3 flex justify-center">
             <Link
+              ref={magnetRef}
               href="/"
-              className="flex justify-center items-center rounded-full bg-white mr-[32px] ThreeD hover:shadow-lg hover:shadow-gray-600 hover:-translate-y-[4px]"
+              className="flex justify-center items-center rounded-full bg-white mr-[32px] ThreeD hover:shadow-lg hover:shadow-gray-600"
+              style={{ transition: 'transform 0.2s ease, box-shadow 0.2s ease' }}
             >
               <div className="flex items-center justify-center sm:mx-[16px] mx-[14px] my-[8px]">
                 <h1 className="text-black font-medium mr-1 sm:text-[16px] text-[14px]">Get a Demo</h1>
                 <div className="w-[11px]">
-                  <Image
-                    src="/Black Right Arrow.png"
-                    alt="Arrow"
-                    layout="responsive"
-                    width={0}
-                    height={0}
-                  />
+                  <Image src="/Black Right Arrow.png" alt="Arrow" layout="responsive" width={0} height={0} />
                 </div>
               </div>
             </Link>
@@ -126,6 +199,20 @@ const HeroSection = () => {
                 )}
               </React.Fragment>
             ))}
+          </div>
+
+          {/* Bouncing scroll chevron */}
+          <div className="FadeInUp5 mt-[60px]">
+            <div
+              ref={chevronRef}
+              className="BounceDown flex flex-col items-center cursor-pointer"
+              style={{ opacity: 0.4 }}
+              onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M6 9l6 6 6-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
           </div>
 
         </div>

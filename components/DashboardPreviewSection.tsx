@@ -19,8 +19,8 @@ const navItems = [
 ];
 
 const mockProjects = [
-    { name: 'E-Commerce Site', progress: 72, color: '#467CD9', statusLabel: 'Developing' },
-    { name: 'Brand Refresh', progress: 45, color: '#FFD563', statusLabel: 'Designing' },
+    { name: 'E-Commerce Site', progress: 72, color: '#998BF9', statusLabel: 'Developing' },
+    { name: 'Brand Refresh', progress: 45, color: '#5840F0', statusLabel: 'Designing' },
 ];
 
 const DashboardPreviewSection = () => {
@@ -116,7 +116,7 @@ const DashboardPreviewSection = () => {
                     <div className="DashboardBackgroundGradient flex" style={{ height: '420px' }}>
 
                         {/* Sidebar icon-only */}
-                        <div
+                        {/* <div
                             className="flex-shrink-0 border-r border-white/5 py-[20px] flex flex-col"
                             style={{ width: '60px' }}
                         >
@@ -137,7 +137,7 @@ const DashboardPreviewSection = () => {
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </div> */}
 
                         {/* Wider sidebar sm+ */}
                         <div className="hidden sm:flex flex-col flex-shrink-0 border-r border-white/5 py-[20px] px-[20px]" style={{ width: '165px' }}>
@@ -177,7 +177,7 @@ const DashboardPreviewSection = () => {
 
                             {/* Welcome */}
                             <div className="mb-[20px] sm:mb-[24px]">
-                                <h3 className="text-[16px] sm:text-[20px] font-semibold">Hey, Welcome back 👋</h3>
+                                <h3 className="text-[16px] sm:text-[20px] font-semibold">Welcome back, Trey 👋</h3>
                                 <p className="text-[11px] opacity-35 font-light mt-[3px]">Here&apos;s what&apos;s happening with your projects.</p>
                             </div>
 

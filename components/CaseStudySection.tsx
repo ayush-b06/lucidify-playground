@@ -1,8 +1,48 @@
+"use client"
+
 import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 
 const CaseStudySection = () => {
+    const sectionRef = useRef<HTMLDivElement>(null);
+
+    // Refs for VENSAR images
+    const v1 = useRef<HTMLDivElement>(null);
+    const v2 = useRef<HTMLDivElement>(null);
+    const v3 = useRef<HTMLDivElement>(null);
+    // Refs for BGINTL images
+    const b1 = useRef<HTMLDivElement>(null);
+    const b2 = useRef<HTMLDivElement>(null);
+    const b3 = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const section = sectionRef.current;
+            if (!section) return;
+            const rect = section.getBoundingClientRect();
+            // scrolled = how far the section has entered the viewport (positive = entered)
+            const scrolled = window.innerHeight - rect.top;
+
+            // Each image layer gets a different parallax multiplier
+            // Creates a spreading/layering effect as you scroll
+            const apply = (el: HTMLDivElement | null, rate: number) => {
+                if (el) el.style.transform = `translateY(${scrolled * rate}px)`;
+            };
+
+            apply(v1.current, -0.05);
+            apply(v2.current,  0.03);
+            apply(v3.current,  0.08);
+            apply(b1.current, -0.05);
+            apply(b2.current,  0.03);
+            apply(b3.current,  0.08);
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        handleScroll(); // initial
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
         <section className="items-center">
             <div
@@ -17,58 +57,32 @@ const CaseStudySection = () => {
                 </div>
             </div>
 
-            <div className="items-center">
+            <div ref={sectionRef} className="items-center">
                 <div className="flex sm:flex-row flex-col justify-between mx-auto max-w-[100%] 2xl:max-w-[1620px] xl:max-w-[90%] sm:max-w-[95%]">
+                    {/* VENSAR */}
                     <div className="flex flex-col sm:mr-[150px] 2xl:mr-[150px] xl:mr-[100px] lg:mr-[75px] sm:mx-none mx-auto">
                         <Link
-                            className="flex justify-center items-center TransparentBackgroundGradient rounded-[50px] CaseStudyHover "
+                            className="flex justify-center items-center TransparentBackgroundGradient rounded-[50px] CaseStudyHover"
                             href="https://vensar.co/" target="_blank">
                             <div className="w-full h-full bg-[#00000080] z-40 absolute flex justify-center items-center ViewMoreCard opacity-0">
                                 <div className="flex items-center">
                                     <h3 className="text-[20px] font-light z-40">View Live</h3>
                                     <div className="TextGradient flex items-center">
                                         <div className="w-[16px] -rotate-45 ml-[8px]">
-                                            <Image
-                                                src="/White Top Right Arrow.png"
-                                                alt="Top Right Arrow"
-                                                layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
-                                                width={0}           // leave at 0 (wrap with a div and that will choose the width)
-                                                height={0}          // leave at 0
-                                            />
+                                            <Image src="/White Top Right Arrow.png" alt="Top Right Arrow" layout="responsive" width={0} height={0} />
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex flex-col mt-[100px] sm:mb-[75px] mb-[50px] relative justify-center">
-                                <div className="2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] z-20">
-                                    <Image
-                                        src="/VENSAR Homepage.png"
-                                        alt="VENSAR Case Study Website"
-                                        layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
-                                        width={0}           // leave at 0 (wrap with a div and that will choose the width)
-                                        height={0}          // leave at 0
-                                        className="rounded-[25px]"
-                                    />
+                                <div ref={v1} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] z-20">
+                                    <Image src="/VENSAR Homepage.png" alt="VENSAR Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
                                 </div>
-                                <div className="2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] sm:ml-[150px] ml-[50px]">
-                                    <Image
-                                        src="/VENSAR Flashcards.png"
-                                        alt="VENSAR Case Study Website"
-                                        layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
-                                        width={0}           // leave at 0 (wrap with a div and that will choose the width)
-                                        height={0}          // leave at 0
-                                        className="rounded-[25px]"
-                                    />
+                                <div ref={v2} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] sm:ml-[150px] ml-[50px]">
+                                    <Image src="/VENSAR Flashcards.png" alt="VENSAR Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
                                 </div>
-                                <div className="2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] z-10">
-                                    <Image
-                                        src="/VENSAR Footer.png"
-                                        alt="VENSAR Case Study Website"
-                                        layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
-                                        width={0}           // leave at 0 (wrap with a div and that will choose the width)
-                                        height={0}          // leave at 0
-                                        className="rounded-[25px]"
-                                    />
+                                <div ref={v3} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] z-10">
+                                    <Image src="/VENSAR Footer.png" alt="VENSAR Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
                                 </div>
                             </div>
                         </Link>
@@ -81,26 +95,17 @@ const CaseStudySection = () => {
                                 The intuitive design and seamless functionality
                                 led to a 25% increase in user engagement, driving more business directly through their site.
                             </h3>
-                            <Link
-                                href="/creations"
-                                className="flex items-center ml-[40px] ViewAllWorkHover">
+                            <Link href="/creations" className="flex items-center ml-[40px] ViewAllWorkHover">
                                 <div className="ViewAllWorkCircle rounded-full border-[1px] shadow-inner shadow-gray-700 border-solid border-white w-[10px] h-[10px] opacity-60" />
                                 <div className="-ml-[5px] w-[30px] mr-[10px] ViewAllWorkArrow">
-                                    <Image
-                                        src="/Left White Arrow.png"
-                                        alt="Left Arrow"
-                                        layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
-                                        width={0}           // leave at 0 (wrap with a div and that will choose the width)
-                                        height={0}          // leave at 0
-                                    />
+                                    <Image src="/Left White Arrow.png" alt="Left Arrow" layout="responsive" width={0} height={0} />
                                 </div>
                                 <h3 className="text-[18px] tracking-[1px] ViewAllWorkText">VIEW ALL WORK</h3>
                             </Link>
                         </div>
                     </div>
 
-
-
+                    {/* BGINTL */}
                     <div className="flex flex-col justify-center align-center sm:mt-[300px] mt-[75px] sm:mx-none mx-auto">
                         <Link
                             className="flex justify-center items-center TransparentBackgroundGradient rounded-[50px] CaseStudyHover"
@@ -110,47 +115,20 @@ const CaseStudySection = () => {
                                     <h3 className="text-[20px] font-light z-40">View Live</h3>
                                     <div className="TextGradient flex items-center">
                                         <div className="w-[16px] -rotate-45 ml-[8px]">
-                                            <Image
-                                                src="/White Top Right Arrow.png"
-                                                alt="Top Right Arrow"
-                                                layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
-                                                width={0}           // leave at 0 (wrap with a div and that will choose the width)
-                                                height={0}          // leave at 0
-                                            />
+                                            <Image src="/White Top Right Arrow.png" alt="Top Right Arrow" layout="responsive" width={0} height={0} />
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div className="flex flex-col mt-[100px] mb-[75px] relative justify-center">
-                                <div className="2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] z-20 sm:ml-[150px] ml-[50px]">
-                                    <Image
-                                        src="/BGINTL Homepage.png"
-                                        alt="BGINTL Case Study Website"
-                                        layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
-                                        width={0}           // leave at 0 (wrap with a div and that will choose the width)
-                                        height={0}          // leave at 0
-                                        className="rounded-[25px]"
-                                    />
+                                <div ref={b1} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] z-20 sm:ml-[150px] ml-[50px]">
+                                    <Image src="/BGINTL Homepage.png" alt="BGINTL Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
                                 </div>
-                                <div className="2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] sm:mr-[150px] mr-[50px]">
-                                    <Image
-                                        src="/BGINTL Flashcards.png"
-                                        alt="BGINTL Case Study Website"
-                                        layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
-                                        width={0}           // leave at 0 (wrap with a div and that will choose the width)
-                                        height={0}          // leave at 0
-                                        className="rounded-[25px]"
-                                    />
+                                <div ref={b2} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] sm:mr-[150px] mr-[50px]">
+                                    <Image src="/BGINTL Flashcards.png" alt="BGINTL Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
                                 </div>
-                                <div className="2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] z-10 sm:ml-[150px] ml-[50px]">
-                                    <Image
-                                        src="/BGINTL Footer.png"
-                                        alt="BGINTL Case Study Website"
-                                        layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
-                                        width={0}           // leave at 0 (wrap with a div and that will choose the width)
-                                        height={0}          // leave at 0
-                                        className="rounded-[25px]"
-                                    />
+                                <div ref={b3} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] z-10 sm:ml-[150px] ml-[50px]">
+                                    <Image src="/BGINTL Footer.png" alt="BGINTL Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
                                 </div>
                             </div>
                         </Link>
@@ -159,29 +137,19 @@ const CaseStudySection = () => {
                                 <h2 className="sm:text-[32px] text-[28px] font-medium">BGINTL</h2>
                                 <h2 className="sm:text-[32px] text-[28px] font-thin">2024</h2>
                             </div>
-                            <h3 className="TextFont mb-[20px]">We revamped BGINTL’s portfolio website, focusing on showcasing their expertise and projects.
+                            <h3 className="TextFont mb-[20px]">We revamped BGINTL's portfolio website, focusing on showcasing their expertise and projects.
                                 The improved design and user experience helped them attract higher-quality leads, leading to a
                                 30% increase in client inquiries within the first two months.
                             </h3>
-                            <Link
-                                href="/creations"
-                                className="flex items-center ml-[40px] ViewAllWorkHover">
+                            <Link href="/creations" className="flex items-center ml-[40px] ViewAllWorkHover">
                                 <div className="ViewAllWorkCircle rounded-full border-[1px] shadow-inner shadow-gray-700 border-solid border-white w-[10px] h-[10px] opacity-60" />
                                 <div className="-ml-[5px] w-[30px] mr-[10px] ViewAllWorkArrow">
-                                    <Image
-                                        src="/Left White Arrow.png"
-                                        alt="Left Arrow"
-                                        layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
-                                        width={0}           // leave at 0 (wrap with a div and that will choose the width)
-                                        height={0}          // leave at 0
-                                    />
+                                    <Image src="/Left White Arrow.png" alt="Left Arrow" layout="responsive" width={0} height={0} />
                                 </div>
                                 <h3 className="text-[18px] tracking-[1px] ViewAllWorkText">VIEW ALL WORK</h3>
                             </Link>
                         </div>
                     </div>
-
-
                 </div>
             </div>
         </section>
