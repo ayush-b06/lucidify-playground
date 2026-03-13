@@ -2,158 +2,276 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import React, { useEffect, useRef } from 'react'
+import React, { useRef, useState, useCallback } from 'react'
+
+const projects = [
+    {
+        num: '01',
+        name: 'VENSAR',
+        year: '2024',
+        tags: ['Web Design', 'Development', 'Branding'],
+        description: 'In just 2 weeks, we created a modern, responsive website that boosted conversion rates by 30% and increased user engagement by 25%.',
+        stats: [{ value: '+30%', label: 'Conversion Rate' }, { value: '+25%', label: 'User Engagement' }, { value: '2wk', label: 'Turnaround' }],
+        previewImage: '/VENSAR Homepage.png',
+        href: 'https://vensar.co/',
+    },
+    {
+        num: '02',
+        name: 'BGINTL',
+        year: '2024',
+        tags: ['Web Design', 'Development', 'Portfolio'],
+        description: 'We revamped BGINTL\'s portfolio site, attracting higher-quality leads and driving a 30% increase in client inquiries within two months.',
+        stats: [{ value: '+30%', label: 'Client Inquiries' }, { value: '2mo', label: 'Time to Results' }, { value: '100%', label: 'Satisfaction' }],
+        previewImage: '/BGINTL Homepage.png',
+        href: 'https://bgintl.co/',
+    },
+];
 
 const CaseStudySection = () => {
-    const sectionRef = useRef<HTMLDivElement>(null);
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+    const mousePos = useRef({ x: 0, y: 0 });
+    const previewRef = useRef<HTMLDivElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
+    const rafRef = useRef<number | null>(null);
 
-    // Refs for VENSAR images
-    const v1 = useRef<HTMLDivElement>(null);
-    const v2 = useRef<HTMLDivElement>(null);
-    const v3 = useRef<HTMLDivElement>(null);
-    // Refs for BGINTL images
-    const b1 = useRef<HTMLDivElement>(null);
-    const b2 = useRef<HTMLDivElement>(null);
-    const b3 = useRef<HTMLDivElement>(null);
+    const onMouseMove = useCallback((e: React.MouseEvent) => {
+        if (!listRef.current) return;
+        const rect = listRef.current.getBoundingClientRect();
+        mousePos.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
 
-    useEffect(() => {
-        const handleScroll = () => {
-            const section = sectionRef.current;
-            if (!section) return;
-            const rect = section.getBoundingClientRect();
-            // scrolled = how far the section has entered the viewport (positive = entered)
-            const scrolled = window.innerHeight - rect.top;
-
-            // Each image layer gets a different parallax multiplier
-            // Creates a spreading/layering effect as you scroll
-            const apply = (el: HTMLDivElement | null, rate: number) => {
-                if (el) el.style.transform = `translateY(${scrolled * rate}px)`;
-            };
-
-            apply(v1.current, -0.05);
-            apply(v2.current,  0.03);
-            apply(v3.current,  0.08);
-            apply(b1.current, -0.05);
-            apply(b2.current,  0.03);
-            apply(b3.current,  0.08);
-        };
-
-        window.addEventListener('scroll', handleScroll, { passive: true });
-        handleScroll(); // initial
-        return () => window.removeEventListener('scroll', handleScroll);
+        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(() => {
+            if (!previewRef.current) return;
+            previewRef.current.style.left = `${mousePos.current.x + 36}px`;
+            previewRef.current.style.top  = `${mousePos.current.y - 110}px`;
+        });
     }, []);
+
+    const handleRowMouseMove = (e: React.MouseEvent<HTMLDivElement>, i: number) => {
+        // 3D tilt on the preview card
+        if (!previewRef.current || hoveredIndex !== i) return;
+        const rect = previewRef.current.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const rx = ((e.clientY - cy) / (rect.height / 2)) * -5;
+        const ry = ((e.clientX - cx) / (rect.width / 2)) * 5;
+        previewRef.current.style.transform = `translate(0, 0) perspective(600px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+    };
+
+    const handleRowLeave = () => {
+        setHoveredIndex(null);
+        if (previewRef.current) {
+            previewRef.current.style.transform = 'translate(0, 0) perspective(600px) rotateX(0deg) rotateY(0deg)';
+        }
+    };
 
     return (
         <section className="items-center">
-            <div
-                className="mx-auto py-[60px] sm:my-[100px] mt-[100px] mb-[50px] flex flex-col items-center justify-center sm:max-w-[1430px]"
-                style={{
-                    background: 'linear-gradient(45deg, rgba(60, 60, 60, 0) 0%, rgba(60, 60, 60, 0.5) 50%, rgba(60, 60, 60, 0) 100%)'
-                }}>
-                <h1 className="HeadingFont">Our work.</h1>
-                <div className="flex items-center justify-center flex-col mt-[10px] sm:max-w-auto max-w-[80%] sm:text-start text-center">
-                    <h3 className="TextFont mb-[20px]">We understand every business is <span className="TextGradient sm:text-[35px] text-[26px] font-normal">different</span>.</h3>
-                    <h3 className="TextFont">Thus, we prioritize putting <span className="font-medium">time and quality</span> in every project in order to truly understand what you want.</h3>
-                </div>
-            </div>
+            <div className="mx-auto mt-[120px] max-w-[1080px] px-[32px] sm:px-[48px]">
 
-            <div ref={sectionRef} className="items-center">
-                <div className="flex sm:flex-row flex-col justify-between mx-auto max-w-[100%] 2xl:max-w-[1620px] xl:max-w-[90%] sm:max-w-[95%]">
-                    {/* VENSAR */}
-                    <div className="flex flex-col sm:mr-[150px] 2xl:mr-[150px] xl:mr-[100px] lg:mr-[75px] sm:mx-none mx-auto">
-                        <Link
-                            className="flex justify-center items-center TransparentBackgroundGradient rounded-[50px] CaseStudyHover"
-                            href="https://vensar.co/" target="_blank">
-                            <div className="w-full h-full bg-[#00000080] z-40 absolute flex justify-center items-center ViewMoreCard opacity-0">
-                                <div className="flex items-center">
-                                    <h3 className="text-[20px] font-light z-40">View Live</h3>
-                                    <div className="TextGradient flex items-center">
-                                        <div className="w-[16px] -rotate-45 ml-[8px]">
-                                            <Image src="/White Top Right Arrow.png" alt="Top Right Arrow" layout="responsive" width={0} height={0} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex flex-col mt-[100px] sm:mb-[75px] mb-[50px] relative justify-center">
-                                <div ref={v1} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] z-20">
-                                    <Image src="/VENSAR Homepage.png" alt="VENSAR Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
-                                </div>
-                                <div ref={v2} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] sm:ml-[150px] ml-[50px]">
-                                    <Image src="/VENSAR Flashcards.png" alt="VENSAR Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
-                                </div>
-                                <div ref={v3} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] z-10">
-                                    <Image src="/VENSAR Footer.png" alt="VENSAR Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
-                                </div>
-                            </div>
-                        </Link>
-                        <div className="flex flex-col sm:max-w-[100%] max-w-[85%] mx-auto">
-                            <div className="flex justify-between mt-[40px] mb-[30px]">
-                                <h2 className="sm:text-[32px] text-[28px] font-medium">VENSAR</h2>
-                                <h2 className="sm:text-[32px] text-[28px] font-thin">2024</h2>
-                            </div>
-                            <h3 className="TextFont mb-[20px]">In just 2 weeks, we created a modern, responsive website for Vensar that boosted conversion rates by 30%.
-                                The intuitive design and seamless functionality
-                                led to a 25% increase in user engagement, driving more business directly through their site.
-                            </h3>
-                            <Link href="/creations" className="flex items-center ml-[40px] ViewAllWorkHover">
-                                <div className="ViewAllWorkCircle rounded-full border-[1px] shadow-inner shadow-gray-700 border-solid border-white w-[10px] h-[10px] opacity-60" />
-                                <div className="-ml-[5px] w-[30px] mr-[10px] ViewAllWorkArrow">
-                                    <Image src="/Left White Arrow.png" alt="Left Arrow" layout="responsive" width={0} height={0} />
-                                </div>
-                                <h3 className="text-[18px] tracking-[1px] ViewAllWorkText">VIEW ALL WORK</h3>
-                            </Link>
-                        </div>
+                {/* Header */}
+                <div className="flex items-end justify-between mb-[16px]">
+                    <div>
+                        <span className="text-[10px] tracking-[4px] font-medium opacity-25">OUR WORK</span>
+                        <h1 className="HeadingFont mt-[10px]">Our work.</h1>
+                    </div>
+                    <Link
+                        href="/creations"
+                        className="hidden sm:flex items-center gap-[8px] text-[11px] tracking-[2px] font-medium"
+                        style={{ opacity: 0.3, transition: 'opacity 0.25s ease' }}
+                        onMouseEnter={e => (e.currentTarget.style.opacity = '0.7')}
+                        onMouseLeave={e => (e.currentTarget.style.opacity = '0.3')}
+                    >
+                        VIEW ALL
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                            <path d="M5 12h14M12 5l7 7-7 7" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    </Link>
+                </div>
+
+                {/* Sub-heading */}
+                <p className="text-[14px] font-light mb-[56px]" style={{ opacity: 0.35 }}>
+                    Every business is different — we put time and quality into every project.
+                </p>
+
+                {/* Project list */}
+                <div
+                    ref={listRef}
+                    className="relative"
+                    onMouseMove={onMouseMove}
+                >
+                    {/* Floating cursor-following image preview */}
+                    <div
+                        ref={previewRef}
+                        className="absolute pointer-events-none z-50 rounded-[18px] overflow-hidden"
+                        style={{
+                            width: '300px',
+                            height: '190px',
+                            opacity: hoveredIndex !== null ? 1 : 0,
+                            transition: 'opacity 0.25s ease',
+                            boxShadow: '0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)',
+                        }}
+                    >
+                        {hoveredIndex !== null && (
+                            <Image
+                                src={projects[hoveredIndex].previewImage}
+                                alt={projects[hoveredIndex].name}
+                                fill
+                                style={{ objectFit: 'cover' }}
+                            />
+                        )}
                     </div>
 
-                    {/* BGINTL */}
-                    <div className="flex flex-col justify-center align-center sm:mt-[300px] mt-[75px] sm:mx-none mx-auto">
-                        <Link
-                            className="flex justify-center items-center TransparentBackgroundGradient rounded-[50px] CaseStudyHover"
-                            href="https://bgintl.co/" target="_blank">
-                            <div className="w-full h-full bg-[#00000080] z-40 absolute flex justify-center items-center ViewMoreCard opacity-0">
-                                <div className="flex items-center">
-                                    <h3 className="text-[20px] font-light z-40">View Live</h3>
-                                    <div className="TextGradient flex items-center">
-                                        <div className="w-[16px] -rotate-45 ml-[8px]">
-                                            <Image src="/White Top Right Arrow.png" alt="Top Right Arrow" layout="responsive" width={0} height={0} />
+                    {projects.map((p, i) => {
+                        const isHovered = hoveredIndex === i;
+                        return (
+                            <div key={p.num}>
+                                {/* Top divider */}
+                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+
+                                <Link href={p.href} target="_blank">
+                                    <div
+                                        className="relative py-[32px] sm:py-[40px]"
+                                        onMouseEnter={() => setHoveredIndex(i)}
+                                        onMouseLeave={handleRowLeave}
+                                        onMouseMove={(e) => handleRowMouseMove(e, i)}
+                                        style={{ cursor: 'none' }}
+                                    >
+                                        {/* Row hover background glow */}
+                                        <div
+                                            className="absolute inset-0 pointer-events-none rounded-[12px]"
+                                            style={{
+                                                background: isHovered
+                                                    ? 'linear-gradient(to right, rgba(114,92,247,0.05) 0%, transparent 70%)'
+                                                    : 'transparent',
+                                                transition: 'background 0.4s ease',
+                                            }}
+                                        />
+
+                                        {/* Main row */}
+                                        <div className="flex items-center justify-between relative z-10">
+                                            <div className="flex items-center gap-[20px] sm:gap-[32px]">
+                                                <span
+                                                    className="text-[12px] font-light flex-shrink-0"
+                                                    style={{
+                                                        opacity: isHovered ? 0.5 : 0.2,
+                                                        transition: 'opacity 0.3s ease',
+                                                    }}
+                                                >
+                                                    {p.num}
+                                                </span>
+                                                <div className="relative" style={{ display: 'inline-block' }}>
+                                                    <h2
+                                                        className="font-bold leading-none"
+                                                        style={{
+                                                            fontSize: 'clamp(36px, 6vw, 72px)',
+                                                            letterSpacing: '-2px',
+                                                            color: 'white',
+                                                            opacity: isHovered ? 0 : 1,
+                                                            transition: 'opacity 0.35s ease',
+                                                        }}
+                                                    >
+                                                        {p.name}
+                                                    </h2>
+                                                    <h2
+                                                        className="font-bold leading-none TextGradient absolute top-0 left-0"
+                                                        style={{
+                                                            fontSize: 'clamp(36px, 6vw, 72px)',
+                                                            letterSpacing: '-2px',
+                                                            opacity: isHovered ? 1 : 0,
+                                                            transition: 'opacity 0.35s ease',
+                                                        }}
+                                                    >
+                                                        {p.name}
+                                                    </h2>
+                                                </div>
+                                            </div>
+
+                                            {/* Right: year + arrow */}
+                                            <div className="flex items-center gap-[20px] flex-shrink-0">
+                                                <span
+                                                    className="text-[13px] font-light hidden sm:block"
+                                                    style={{ opacity: 0.3 }}
+                                                >
+                                                    {p.year}
+                                                </span>
+                                                <div
+                                                    className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0"
+                                                    style={{
+                                                        border: isHovered ? '1px solid rgba(114,92,247,0.6)' : '1px solid rgba(255,255,255,0.15)',
+                                                        background: isHovered ? 'rgba(114,92,247,0.15)' : 'transparent',
+                                                        transition: 'border-color 0.3s ease, background 0.3s ease, transform 0.3s ease',
+                                                        transform: isHovered ? 'rotate(-45deg)' : 'rotate(0deg)',
+                                                    }}
+                                                >
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                                        <path d="M5 12h14M12 5l7 7-7 7" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Tags */}
+                                        <div className="flex gap-[8px] mt-[14px] ml-[32px] sm:ml-[52px] flex-wrap relative z-10">
+                                            {p.tags.map(tag => (
+                                                <span
+                                                    key={tag}
+                                                    className="text-[10px] tracking-[1.5px] px-[10px] py-[4px] rounded-full"
+                                                    style={{
+                                                        background: 'rgba(255,255,255,0.06)',
+                                                        opacity: isHovered ? 0.8 : 0.45,
+                                                        transition: 'opacity 0.3s ease',
+                                                    }}
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+
+                                        {/* Expandable: description + stats */}
+                                        <div
+                                            className="overflow-hidden relative z-10"
+                                            style={{
+                                                maxHeight: isHovered ? '200px' : '0px',
+                                                opacity: isHovered ? 1 : 0,
+                                                transition: 'max-height 0.5s cubic-bezier(0.25,1,0.5,1), opacity 0.35s ease',
+                                            }}
+                                        >
+                                            <div className="ml-[32px] sm:ml-[52px] mt-[20px] flex flex-col sm:flex-row sm:items-end justify-between gap-[20px]">
+                                                <p className="text-[13px] font-light leading-relaxed max-w-[420px]" style={{ opacity: 0.5 }}>
+                                                    {p.description}
+                                                </p>
+                                                <div className="flex gap-[24px] flex-shrink-0">
+                                                    {p.stats.map(s => (
+                                                        <div key={s.label} className="flex flex-col items-center">
+                                                            <span className="text-[20px] font-bold TextGradient leading-none">{s.value}</span>
+                                                            <span className="text-[9px] tracking-[1px] font-light mt-[4px]" style={{ opacity: 0.35 }}>{s.label}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             </div>
-                            <div className="flex flex-col mt-[100px] mb-[75px] relative justify-center">
-                                <div ref={b1} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] z-20 sm:ml-[150px] ml-[50px]">
-                                    <Image src="/BGINTL Homepage.png" alt="BGINTL Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
-                                </div>
-                                <div ref={b2} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] sm:mr-[150px] mr-[50px]">
-                                    <Image src="/BGINTL Flashcards.png" alt="BGINTL Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
-                                </div>
-                                <div ref={b3} className="CaseStudyImg 2xl:max-w-[500px] xl:max-w-[375px] lg:max-w-[360px] max-w-[340px] sm:-mt-[75px] -mt-[50px] z-10 sm:ml-[150px] ml-[50px]">
-                                    <Image src="/BGINTL Footer.png" alt="BGINTL Case Study Website" layout="responsive" width={0} height={0} className="rounded-[25px]" />
-                                </div>
-                            </div>
-                        </Link>
-                        <div className="flex flex-col sm:max-w-[100%] max-w-[85%] mx-auto">
-                            <div className="flex justify-between mt-[40px] mb-[30px]">
-                                <h2 className="sm:text-[32px] text-[28px] font-medium">BGINTL</h2>
-                                <h2 className="sm:text-[32px] text-[28px] font-thin">2024</h2>
-                            </div>
-                            <h3 className="TextFont mb-[20px]">We revamped BGINTL's portfolio website, focusing on showcasing their expertise and projects.
-                                The improved design and user experience helped them attract higher-quality leads, leading to a
-                                30% increase in client inquiries within the first two months.
-                            </h3>
-                            <Link href="/creations" className="flex items-center ml-[40px] ViewAllWorkHover">
-                                <div className="ViewAllWorkCircle rounded-full border-[1px] shadow-inner shadow-gray-700 border-solid border-white w-[10px] h-[10px] opacity-60" />
-                                <div className="-ml-[5px] w-[30px] mr-[10px] ViewAllWorkArrow">
-                                    <Image src="/Left White Arrow.png" alt="Left Arrow" layout="responsive" width={0} height={0} />
-                                </div>
-                                <h3 className="text-[18px] tracking-[1px] ViewAllWorkText">VIEW ALL WORK</h3>
-                            </Link>
-                        </div>
-                    </div>
+                        );
+                    })}
+
+                    {/* Bottom divider */}
+                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
                 </div>
+
+                {/* Mobile view all */}
+                <Link href="/creations" className="flex items-center mt-[32px] sm:hidden ViewAllWorkHover">
+                    <div className="ViewAllWorkCircle rounded-full border-[1px] shadow-inner shadow-gray-700 border-solid border-white w-[10px] h-[10px] opacity-60" />
+                    <div className="-ml-[5px] w-[30px] mr-[10px] ViewAllWorkArrow">
+                        <Image src="/Left White Arrow.png" alt="Left Arrow" layout="responsive" width={0} height={0} />
+                    </div>
+                    <h3 className="text-[18px] tracking-[1px] ViewAllWorkText">VIEW ALL WORK</h3>
+                </Link>
             </div>
         </section>
-    )
-}
+    );
+};
 
-export default CaseStudySection
+export default CaseStudySection;
