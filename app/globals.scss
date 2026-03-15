@@ -276,6 +276,28 @@ body * {
   /* Drop shadow with 5% opacity */
 }
 
+
+/* Dashboard Styles */
+.SpecialContentCardShadow {
+  /* Inner shadow */
+  box-shadow:
+    inset 0px 0.5px 0.5px rgba(255, 255, 255, 0.6),
+    /* Inner shadow */
+
+    /* Drop shadows */
+    0px 243px 68px rgba(0, 0, 0, 0),
+    /* Drop shadow with 0% opacity */
+    0px 156px 62px rgba(0, 0, 0, 0.01),
+    /* Drop shadow with 1% opacity */
+    0px 39px 39px rgba(0, 0, 0, 0.04),
+    /* Drop shadow with 4% opacity */
+    0px 88px 53px rgba(0, 0, 0, 0.03),
+    /* Drop shadow with 3% opacity */
+    0px 10px 21px rgba(0, 0, 0, 0.05);
+  /* Drop shadow with 5% opacity */
+}
+
+
 .ContentCardLightShadow {
   /* Inner shadow */
   box-shadow:

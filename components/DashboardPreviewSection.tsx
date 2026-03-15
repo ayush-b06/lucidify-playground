@@ -148,7 +148,7 @@ const DashboardPreviewSection = () => {
                                 {navItems.map(item => (
                                     <div
                                         key={item.label}
-                                        className={`flex items-center gap-[10px] px-[10px] py-[7px] rounded-[9px] ${item.active ? 'BlackWithLightGradient ContentCardShadow' : ''}`}
+                                        className={`flex items-center gap-[10px] px-[10px] py-[7px] rounded-[9px] ${item.active ? 'BlackWithLightGradient SpecialContentCardShadow' : ''}`}
                                     >
                                         <div className={`w-[14px] h-[14px] flex-shrink-0 ${item.active ? '' : 'opacity-35'}`}>
                                             <Image src={item.icon} alt={item.label} layout="responsive" width={0} height={0} />
