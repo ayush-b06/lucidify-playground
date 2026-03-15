@@ -134,12 +134,9 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
     { code: "WI", name: "Wisconsin" },
     { code: "WY", name: "Wyoming" }
   ];
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedStateAbbv = e.target.value;
-    const selectedState = usStates.find((state) => state.code === selectedStateAbbv);
-
-    setSelectedStateAbbv(selectedStateAbbv);
-    setSelectedStateName(selectedState ? selectedState.name : "");
+    // unused — state/region selection not currently implemented
   };
 
   // const countries = [
