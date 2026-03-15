@@ -83,7 +83,7 @@ const ProcessSection = () => {
             cardRefs.current.forEach((el, i) => {
                 if (!el) return;
                 const active = i === next;
-                el.style.borderColor = active ? 'rgba(114,92,247,0.45)' : 'rgba(255,255,255,0.05)';
+                el.style.borderColor = active ? 'rgba(114,92,247,0.45)' : 'var(--color-border-light)';
                 el.style.boxShadow   = active ? '0 0 0 1px rgba(114,92,247,0.12), 0 10px 40px rgba(114,92,247,0.14)' : '';
             });
         };
@@ -202,7 +202,7 @@ const ProcessSection = () => {
                                         transform: `translateY(${i * INIT_STAGGER}px)`,
                                         zIndex: steps.length - i,
                                         opacity: 1 - i * 0.2,
-                                        borderColor: i === 0 ? 'rgba(114,92,247,0.45)' : 'rgba(255,255,255,0.05)',
+                                        borderColor: i === 0 ? 'rgba(114,92,247,0.45)' : 'var(--color-border-light)',
                                         boxShadow: i === 0 ? '0 0 0 1px rgba(114,92,247,0.12), 0 10px 40px rgba(114,92,247,0.14)' : '',
                                         transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
                                     }}
@@ -210,7 +210,7 @@ const ProcessSection = () => {
                                     <span className="text-[26px] font-bold TextGradient flex-shrink-0 w-[48px]">
                                         {step.num}
                                     </span>
-                                    <div className="w-[1px] h-[44px] flex-shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                                    <div className="w-[1px] h-[44px] flex-shrink-0" style={{ background: 'var(--color-border-mid)' }} />
                                     <div>
                                         <h2 className="text-[16px] font-semibold mb-[4px]">{step.title}</h2>
                                         <p className="text-[12.5px] font-light leading-relaxed" style={{ opacity: 0.45 }}>{step.desc}</p>
@@ -224,7 +224,7 @@ const ProcessSection = () => {
                             {steps.map((step) => (
                                 <div key={step.num} className="BlackGradient ContentCardShadow rounded-[16px] px-[22px] py-[18px] flex items-center gap-[16px] border border-white/[0.05]">
                                     <span className="text-[22px] font-bold TextGradient flex-shrink-0">{step.num}</span>
-                                    <div className="w-[1px] h-[40px] flex-shrink-0" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                                    <div className="w-[1px] h-[40px] flex-shrink-0" style={{ background: 'var(--color-border-mid)' }} />
                                     <div>
                                         <h2 className="text-[15px] font-semibold mb-[2px]">{step.title}</h2>
                                         <p className="text-[12px] font-light" style={{ opacity: 0.4 }}>{step.desc}</p>

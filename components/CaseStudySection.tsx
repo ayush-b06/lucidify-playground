@@ -13,7 +13,7 @@ const projects = [
         description: 'In just 2 weeks, we created a modern, responsive website that boosted conversion rates by 30% and increased user engagement by 25%.',
         stats: [{ value: '+30%', label: 'Conversion Rate' }, { value: '+25%', label: 'User Engagement' }, { value: '2wk', label: 'Turnaround' }],
         previewImage: '/VENSAR Homepage.png',
-        href: 'https://vensar.co/',
+        href: 'https://vensar.vercel.app/',
     },
     {
         num: '02',
@@ -23,7 +23,7 @@ const projects = [
         description: 'We revamped BGINTL\'s portfolio site, attracting higher-quality leads and driving a 30% increase in client inquiries within two months.',
         stats: [{ value: '+30%', label: 'Client Inquiries' }, { value: '2mo', label: 'Time to Results' }, { value: '100%', label: 'Satisfaction' }],
         previewImage: '/BGINTL Homepage.png',
-        href: 'https://bgintl.co/',
+        href: 'https://bgintl.vercel.app/',
     },
 ];
 
@@ -127,7 +127,7 @@ const CaseStudySection = () => {
                         return (
                             <div key={p.num}>
                                 {/* Top divider */}
-                                <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                                <div style={{ height: '1px', background: 'var(--color-border-mid)' }} />
 
                                 <Link href={p.href} target="_blank">
                                     <div
@@ -166,7 +166,7 @@ const CaseStudySection = () => {
                                                         style={{
                                                             fontSize: 'clamp(36px, 6vw, 72px)',
                                                             letterSpacing: '-2px',
-                                                            color: 'white',
+                                                            color: 'var(--color-text)',
                                                             opacity: isHovered ? 0 : 1,
                                                             transition: 'opacity 0.35s ease',
                                                         }}
@@ -258,7 +258,7 @@ const CaseStudySection = () => {
                     })}
 
                     {/* Bottom divider */}
-                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+                    <div style={{ height: '1px', background: 'var(--color-border-mid)' }} />
                 </div>
 
                 {/* Mobile view all */}

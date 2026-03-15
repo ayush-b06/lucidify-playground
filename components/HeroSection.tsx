@@ -45,7 +45,7 @@ const HeroSection = () => {
     contentRef.current.style.transform = `translate(${mouseX.current}px, ${mouseY.current + scrollOffset}px)`;
     contentRef.current.style.opacity = String(opacity);
     if (chevronRef.current) {
-      chevronRef.current.style.opacity = String(opacity * 0.4);
+      chevronRef.current.style.opacity = String(opacity * 0.65);
     }
   };
 
@@ -103,15 +103,15 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className={`${poppins.className} items-center`}>
-      <div className="flex justify-center rounded-[50px] mx-auto BackgroundGradient relative overflow-hidden">
+    <section className={`${poppins.className} items-center mt-[86px] sm:mt-[90px]`}>
+      <div className="flex justify-center rounded-b-[50px] mx-auto BackgroundGradient relative overflow-hidden">
 
         {/* Floating particles */}
         {particles.map((p, i) => (
           <div
             key={i}
             className="absolute pointer-events-none rounded-full HeroParticle"
-            style={{
+            style={{  
               left: p.left,
               top: p.top,
               width: `${p.size}px`,
@@ -137,7 +137,7 @@ const HeroSection = () => {
         {/* Content */}
         <div
           ref={contentRef}
-          className="flex items-center w-full flex-col mt-[125px] sm:mb-[150px] mb-[125px] 2xl:mt-[125px] 2xl:mb-[150px] xl:mt-[80px] xl:mb-[125px] lg:mt-[70px] lg:mb-[100px] max-w-[650px]"
+          className="flex items-center w-full flex-col mt-[116px] sm:mb-[70px] mb-[60px] 2xl:mt-[130px] 2xl:mb-[80px] xl:mt-[120px] xl:mb-[60px] lg:mt-[112px] lg:mb-[50px] max-w-[780px] px-[24px] sm:px-[48px] lg:px-0"
           style={{ transition: 'transform 0.08s linear, opacity 0.08s linear' }}
         >
           {/* Badge */}
@@ -201,17 +201,15 @@ const HeroSection = () => {
             ))}
           </div>
 
-          {/* Bouncing scroll chevron */}
+          {/* Scroll indicator */}
           <div className="FadeInUp5 mt-[60px]">
             <div
               ref={chevronRef}
-              className="BounceDown flex flex-col items-center cursor-pointer"
-              style={{ opacity: 0.4 }}
+              className="BounceDown flex flex-row items-center gap-[10px] cursor-pointer"
+              style={{ opacity: 0.65 }}
               onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M6 9l6 6 6-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <span className="text-[10px] tracking-[3px] font-medium">SCROLL</span>
             </div>
           </div>
 

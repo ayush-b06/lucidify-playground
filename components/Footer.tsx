@@ -1,8 +1,13 @@
+"use client"
+
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
+import { useTheme } from '@/context/themeContext'
 
 const Footer = () => {
+    const { theme } = useTheme()
+    const logoSrc = theme === 'light' ? '/Lucidify black logo.png' : '/Lucidify white logo.png'
     return (
         <footer>
             <div className="max-w-[97%] mx-auto flex flex-col items-center justify-between">
@@ -12,7 +17,7 @@ const Footer = () => {
                             href="/"
                             className="relative w-[125px] inline"> {/* Set fixed width */}
                             <Image
-                                src="/Lucidify white logo.png"
+                                src={logoSrc}
                                 alt="Lucidify Logo"
                                 layout="responsive"  // Adjusts height based on width while maintaining aspect ratio
                                 width={0}           //leave at 0 (wrap with a div and that will choose the width)
@@ -22,7 +27,7 @@ const Footer = () => {
                     </div>
 
                     <div className="font-light flex flex-col space-y-[15px] xl:text-[16px] text-[14px] sm:mt-0 mt-[40px]">
-                        <h2 className="">Company</h2>
+                        <h2 className="font-semibold">Company</h2>
                         <Link
                             className="font-light opacity-40 hover:opacity-65 xl:text-[16px] text-[14px]"
                             href="/">

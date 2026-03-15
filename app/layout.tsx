@@ -4,6 +4,8 @@ import "./globals.scss";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
+import FloatingThemeToggle from "@/components/FloatingThemeToggle";
+import { ThemeProvider } from "@/context/themeContext";
 
 const inter = Inter({ subsets: ["latin"] });
 const poppins = Poppins({
@@ -28,9 +30,16 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${poppins.className} bg-black text-white`}>
-          <CustomCursor />
-          {children}
+      <head>
+        {/* Blocking script: sets data-theme before first paint — eliminates flash */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){var t=localStorage.getItem('lucidify-theme');document.documentElement.setAttribute('data-theme',t==='dark'?'dark':'light');})();` }} />
+      </head>
+      <body className={poppins.className}>
+          <ThemeProvider>
+              <CustomCursor />
+              <FloatingThemeToggle />
+              {children}
+          </ThemeProvider>
       </body>
     </html>
   );

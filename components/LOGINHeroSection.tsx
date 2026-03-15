@@ -99,7 +99,7 @@ const LOGINHeroSection = () => {
                             height={0}
                         />
                     </div>
-                    <h3 className="ml-[4px] text-black text-[12px]">Go Home</h3>
+                    <span className="ml-[4px] text-black text-[12px]">Go Home</span>
                 </Link>
 
                 {/* Rocket Icon */}

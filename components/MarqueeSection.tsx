@@ -15,7 +15,7 @@ const MarqueeSection = () => {
     const repeated = [...items, ...items];
 
     return (
-        <div className="overflow-hidden border-y border-white/[0.05] py-[14px]">
+        <div className="overflow-hidden py-[14px]" style={{ borderTop: '1px solid var(--color-marquee-border)', borderBottom: '1px solid var(--color-marquee-border)' }}>
             <div className="MarqueeTrack">
                 {repeated.map((item, i) => (
                     <span key={i} className="flex items-center">

@@ -2,6 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   THEME CSS VARIABLES
+   ============================================================ */
+/* Light mode is default — matches the blocking script in layout.tsx */
+:root,
+[data-theme="light"] {
+  --color-bg: #ffffff;
+  --color-bg-card: linear-gradient(145deg, #ffffff 0%, #f9f7ff 55%, #f3efff 100%);
+  --color-bg-card-solid: #ffffff;
+  --color-bg-card-hover: linear-gradient(145deg, #fefeff 0%, #f1ecff 50%, #e8e1ff 100%);
+  --color-border: rgba(0, 0, 0, 0.10);
+  --color-border-light: rgba(0, 0, 0, 0.08);
+  --color-border-mid: rgba(0, 0, 0, 0.10);
+  --color-text: #0d0d0d;
+  --color-text-muted: rgba(0, 0, 0, 0.62);
+  --color-text-dim: rgba(0, 0, 0, 0.48);
+  --color-marquee-border: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] {
+  --color-bg: #000000;
+  --color-bg-card: linear-gradient(145deg, #161618 0%, #0E0E10 100%);
+  --color-bg-card-solid: #161618;
+  --color-bg-card-hover: linear-gradient(145deg, #1a1a1c 0%, #111113 100%);
+  --color-border: rgba(255, 255, 255, 0.07);
+  --color-border-light: rgba(255, 255, 255, 0.05);
+  --color-border-mid: rgba(255, 255, 255, 0.08);
+  --color-text: #ffffff;
+  --color-text-muted: rgba(255, 255, 255, 0.4);
+  --color-text-dim: rgba(255, 255, 255, 0.2);
+  --color-marquee-border: rgba(255, 255, 255, 0.05);
+}
+
 :root {
   font-size: 16px;
   --title-size: 60px;
@@ -40,9 +73,10 @@
 
 
 body {
-  color: white;
-  background-color: black;
+  color: var(--color-text, white);
+  background-color: var(--color-bg, black);
   font-family: 'Poppins', sans-serif;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
 body * {
@@ -53,6 +87,7 @@ body * {
 
 .BackgroundGradient {
   background: radial-gradient(ellipse 90% 100% at top, #000000 50%, #5240C9 85%, #7160DE 100%);
+  box-shadow: 0 20px 60px rgba(82, 64, 201, 0.22), 0 40px 100px rgba(0, 0, 0, 0.35);
 }
 
 .TransparentBackgroundGradient {
@@ -834,9 +869,11 @@ svg {
 
 .DashboardPreviewGlow {
   box-shadow:
-    0 0 60px rgba(114, 92, 247, 0.12),
-    0 0 120px rgba(98, 101, 240, 0.08),
-    0 40px 80px rgba(0, 0, 0, 0.6);
+    0 0 0 1px rgba(114, 92, 247, 0.10),
+    0 0 60px rgba(114, 92, 247, 0.22),
+    0 0 140px rgba(98, 101, 240, 0.16),
+    0 40px 80px rgba(0, 0, 0, 0.5),
+    0 80px 140px rgba(0, 0, 0, 0.35);
 }
 
 /* ============================================================
@@ -959,12 +996,146 @@ svg {
 }
 
 /* ============================================================
-   NAVBAR — scrolled state
+   NAVBAR PILL
+   ============================================================ */
+.NavbarPill {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.30);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.10),
+    0 8px 32px rgba(0, 0, 0, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  color: #111111;
+}
+
+/* Buttons inside NavbarPill: always white text regardless of pill color */
+.NavbarPill .bg-\[\#725CF7\],
+.NavbarPill .bg-\[\#231F1D\] {
+  color: white !important;
+}
+
+/* Nav link buttons — compact variant of .button for navbar */
+.NavLinkButton.button {
+  height: 36px;
+  border-radius: 999px;
+  /* Softer outer glow */
+  box-shadow: -2px -6px 12px #f7f7ffaa, -2px -3px 6px #f7f7ffaa, -6px 0px 10px #f7f7ffaa, 0px 4px 8px #a5b4fc33;
+}
+
+.NavLinkButton.button:hover {
+  box-shadow: -2px -6px 12px #f7f7ff99, -2px -3px 6px #f7f7ff99, -6px 0px 10px #f7f7ff99, 0px 3px 8px #a5b4fc55 !important;
+}
+
+.NavLinkContent.button__content {
+  height: 100%;
+  border-radius: 999px;
+  transition: box-shadow 0.13s ease-in-out;
+  box-shadow: inset 0px -1px 0px #a5b4fcc4, inset 0px -5px 0px #c1c9ec, inset 0px -6px 0px #eff2ff, 0px -5px 0px #f7f7ff !important;
+}
+
+.NavLinkButton.button:hover .NavLinkContent.button__content {
+  box-shadow: inset 0px -4px 0px #a5b4fcc4, inset 0px -4px 0px #c1c9ec, inset 0px -5px 0px #eff2ff, 0px -4px 0px #f7f7ff !important;
+}
+
+.NavLinkText.button__text {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  transform: translate3d(0px, -3px, 0px) !important;
+  color: #111111;
+}
+
+/* Light mode (dark pill) — greatly reduce outward white shadow on nav buttons */
+[data-theme="light"] .NavLinkButton.button {
+  box-shadow: 0px 3px 6px #a5b4fc22 !important;
+}
+
+[data-theme="light"] .NavLinkButton.button:hover {
+  box-shadow: -1px -2px 4px #f7f7ff44, 0px 2px 6px #a5b4fc33 !important;
+}
+
+/* Light mode — keep bottom inner shadows, remove the top outer white glow */
+[data-theme="light"] .NavLinkContent.button__content {
+  transition: box-shadow 0.13s ease-in-out;
+  box-shadow: inset 0px -1px 0px #a5b4fcc4, inset 0px -4px 0px #c1c9ec, inset 0px -5px 0px #eff2ff, 0px -5px 0px #f7f7ff !important;
+}
+
+[data-theme="light"] .NavLinkButton.button:hover .NavLinkContent.button__content {
+  box-shadow: inset 0px -4px 0px #a5b4fcc4, inset 0px -4px 0px #c1c9ec, inset 0px -5px 0px #eff2ff, 0px -4px 0px #f7f7ff !important;
+}
+
+/* Popup card — always dark bg, preserve white text in light mode */
+[data-theme="light"] .PopupCard .text-white {
+  color: white !important;
+}
+[data-theme="light"] .PopupCard input,
+[data-theme="light"] .PopupCard textarea {
+  background: rgba(255,255,255,0.05) !important;
+  color: white !important;
+  border-color: rgba(255,255,255,0.09) !important;
+}
+[data-theme="light"] .PopupCard input::placeholder,
+[data-theme="light"] .PopupCard textarea::placeholder {
+  color: rgba(255,255,255,0.35) !important;
+}
+
+/* Contact form — always on dark bg, keep placeholder white in light mode */
+[data-theme="light"] .ContactInput::placeholder {
+  color: rgba(255,255,255,0.65) !important;
+}
+
+/* Start a Project button — text and icon always white */
+[data-theme="light"] .NavStartAProjectText {
+  color: white !important;
+}
+[data-theme="light"] .NavStartAProjectBtn svg path {
+  fill: white !important;
+}
+
+/* Underline class kept for reference */
+.NavbarUnderline {
+  background: currentColor;
+}
+
+/* Hamburger bars */
+.NavbarHamburgerBar {
+  background: #111111;
+}
+
+.NavbarHamburger {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* Mobile dropdown */
+.NavbarDropdown {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  color: #111111;
+}
+
+.NavbarDropdownLink {
+  color: #111111;
+}
+
+.NavbarDropdownLinkHover:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.NavbarDropdownDivider {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================================
+   NAVBAR — scrolled state (legacy, kept for reference)
    ============================================================ */
 .NavbarScrolled {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
 
@@ -1229,3 +1400,445 @@ svg {
     text-shadow: none;
   }
 }
+
+/* ============================================================
+   LIGHT MODE OVERRIDES
+   ============================================================ */
+
+/* Page backgrounds & gradients */
+/* BackgroundGradient — floating card on white page */
+[data-theme="light"] .BackgroundGradient {
+  margin: 8px 12px;
+  border-radius: 32px !important;
+  background: radial-gradient(ellipse 80% 110% at 50% -5%, #251470 0%, #3e28a8 40%, #5c3ecc 70%, #7255e0 100%);
+  box-shadow:
+    0 0 0 1px rgba(90, 60, 200, 0.18),
+    0 4px 20px rgba(40, 20, 150, 0.22),
+    0 20px 60px rgba(40, 20, 150, 0.28),
+    0 48px 100px rgba(40, 20, 150, 0.16);
+}
+
+@media (min-width: 640px) {
+  [data-theme="light"] .BackgroundGradient {
+    margin: 12px 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-theme="light"] .BackgroundGradient {
+    margin: 16px 40px;
+  }
+}
+
+/* Text inside BackgroundGradient stays white — it's on a dark bg */
+[data-theme="light"] .BackgroundGradient {
+  color: white;
+}
+
+/* Badge borders inside BackgroundGradient should be subtle white */
+[data-theme="light"] .BackgroundGradient .border-\[\#2F2F2F\],
+[data-theme="light"] .BackgroundGradient .border-\[\#414141\] {
+  border-color: rgba(255, 255, 255, 0.20) !important;
+}
+
+/* Umbrella badge icon inside BackgroundGradient stays light */
+[data-theme="light"] .BackgroundGradient img[src*="Umbrella and L"] {
+  filter: none !important;
+}
+
+/* Text inside BackgroundGradient stays white — it's on a dark bg */
+[data-theme="light"] .BackgroundGradient .text-white {
+  color: white !important;
+}
+
+/* SVGs inside gradient sections keep white strokes */
+[data-theme="light"] .BackgroundGradient svg path[stroke="white"],
+[data-theme="light"] .BackgroundGradient svg line[stroke="white"],
+[data-theme="light"] .BackgroundGradient svg circle[stroke="white"] {
+  stroke: white !important;
+}
+
+/* Images inside BackgroundGradient — no filter inversion */
+[data-theme="light"] .BackgroundGradient img[src*="white logo"],
+[data-theme="light"] .BackgroundGradient img[src*="Lucidify white"] {
+  filter: none !important;
+}
+
+[data-theme="light"] .TransparentBackgroundGradient {
+  background: radial-gradient(ellipse 100% 130% at 50% 0%, #faf8ff 0%, #e6daff6e 50%, #bc9eff55 80%, transparent 100%);
+}
+
+[data-theme="light"] .UpsideDownBackgroundGradient {
+  background: #ffffff;
+  box-shadow: none;
+}
+
+[data-theme="light"] .UmbrellaBackgroundGradient {
+  background: radial-gradient(ellipse 100% 100% at bottom, #faf8ff 55%, #d4baff 80%, #a07af5 100%);
+}
+
+[data-theme="light"] .BlackGradient {
+  background: linear-gradient(to bottom right, #ffffff 0%, #f7f6fc 100%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 6px 16px rgba(0, 0, 0, 0.08),
+    0 16px 36px rgba(0, 0, 0, 0.06);
+}
+
+/* Cards & shadows */
+[data-theme="light"] .ContentCardShadow {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 3px rgba(0, 0, 0, 0.07),
+    0 4px 12px rgba(0, 0, 0, 0.09),
+    0 16px 36px rgba(0, 0, 0, 0.07) !important;
+}
+
+/* Navbar pill — dark in light mode */
+[data-theme="light"] .NavbarPill {
+  background: rgba(10, 8, 24, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    0 8px 32px rgba(0, 0, 0, 0.35);
+  color: white;
+}
+
+/* Light mode: logo src chosen in JS — cancel all filters inside NavbarPill and footer logo */
+[data-theme="light"] .NavbarPill img,
+[data-theme="light"] footer img[alt="Lucidify Logo"] {
+  filter: none !important;
+}
+
+[data-theme="light"] .NavbarHamburgerBar {
+  background: white;
+}
+
+[data-theme="light"] .NavbarHamburger {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="light"] .NavbarDropdown {
+  background: rgba(10, 8, 24, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.20);
+  color: white;
+}
+
+[data-theme="light"] .NavbarDropdownLink {
+  color: white;
+}
+
+[data-theme="light"] .NavbarDropdownLinkHover:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="light"] .NavbarDropdownDivider {
+  background: rgba(255, 255, 255, 0.10);
+}
+
+/* Navbar scrolled state */
+[data-theme="light"] .NavbarScrolled {
+  background: rgba(247, 247, 251, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Marquee border */
+[data-theme="light"] .overflow-hidden.border-y {
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+/* Scroll progress bar stays purple — fine in both modes */
+
+/* Section indicator dots */
+[data-theme="light"] .SectionDotActive {
+  background: #725CF7 !important;
+}
+
+/* Unvisited dots — white/20 is invisible on light bg; make them dark */
+[data-theme="light"] .bg-white\/20 {
+  background-color: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Invert white logos/icons that are invisible on light backgrounds */
+[data-theme="light"] img[src*="white logo"],
+[data-theme="light"] img[src*="Lucidify white"] {
+  filter: invert(1);
+}
+
+/* Umbrella icon (used in badges) — it's white/light colored, invert for light mode */
+[data-theme="light"] img[src*="Umbrella and L"] {
+  filter: invert(1) brightness(0.3);
+}
+
+/* White arrow icons */
+[data-theme="light"] img[src*="White"],
+[data-theme="light"] img[src*="white"] {
+  filter: invert(1) brightness(0.3);
+}
+
+/* Dark buttons keep their white arrows */
+[data-theme="light"] .bg-\[\#231F1D\] img,
+[data-theme="light"] .bg-\[\#0c0b0e\] img {
+  filter: none !important;
+}
+
+/* Except TextGradient backgrounds — those should stay */
+[data-theme="light"] .TextGradient {
+  background: linear-gradient(135deg, #8B76FF 0%, #C4BAFF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Form inputs in contact page */
+[data-theme="light"] input,
+[data-theme="light"] textarea {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: #111 !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] textarea:focus {
+  background: rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 0 0 1px rgba(114, 92, 247, 0.3) !important;
+}
+
+/* Footer border */
+[data-theme="light"] footer .border-t-\[1px\] {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Hero particles — darker in light mode */
+[data-theme="light"] .HeroParticle {
+  background: rgba(114, 92, 247, 0.4) !important;
+}
+
+/* Fade-in animations */
+[data-theme="light"] .FadeInUp,
+[data-theme="light"] .FadeInUp1,
+[data-theme="light"] .FadeInUp2,
+[data-theme="light"] .FadeInUp3,
+[data-theme="light"] .FadeInUp4,
+[data-theme="light"] .FadeInUp5 {
+  color: inherit;
+}
+
+/* Contact page form card */
+[data-theme="light"] .bg-gradient-to-b {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.02)) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Contact info icon backgrounds */
+[data-theme="light"] .bg-gradient-to-br {
+  background: linear-gradient(to bottom right, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.04)) !important;
+}
+
+/* LinkedIn / social button borders */
+[data-theme="light"] .border-\[rgba\(255\,255\,255\,0\.05\)\] {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Scroll section indicator background dots */
+[data-theme="light"] [style*="rgba(255,255,255,0.15)"] {
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Theme transition on all elements */
+[data-theme="light"] *,
+[data-theme="dark"] * {
+  transition-property: opacity, transform, border-color, box-shadow, outline-color, background-color, color, filter;
+  transition-duration: 300ms;
+  transition-timing-function: ease-in-out;
+}
+
+/* ============================================================
+   LIGHT MODE — ADDITIONAL COMPREHENSIVE OVERRIDES
+   ============================================================ */
+
+/* White text classes → dark text */
+[data-theme="light"] .text-white {
+  color: #0d0d0d !important;
+}
+
+/* Specific off-white footer text */
+[data-theme="light"] .text-\[\#F6F5FF\] {
+  color: #444444 !important;
+}
+
+/* Buttons with colored backgrounds stay white text */
+[data-theme="light"] .bg-\[\#725CF7\],
+[data-theme="light"] .bg-\[\#231F1D\] {
+  color: white;
+}
+
+/* BoxShadow override — stronger, visible on light backgrounds */
+[data-theme="light"] .BoxShadow {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 2px 5px rgba(0, 0, 0, 0.10),
+    0 8px 20px rgba(0, 0, 0, 0.12),
+    0 20px 40px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Sign up button in navbar — add bottom inner glow to distinguish it on dark pill */
+[data-theme="light"] .NavbarPill .BoxShadow {
+  box-shadow:
+    inset 0 1px 0px rgba(165, 180, 252, 0.50),
+    0 2px 8px rgba(0, 0, 0, 0.25),
+    0 4px 16px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* SVG strokes that are white — make dark in light mode */
+[data-theme="light"] svg path[stroke="white"],
+[data-theme="light"] svg line[stroke="white"],
+[data-theme="light"] svg polyline[stroke="white"],
+[data-theme="light"] svg circle[stroke="white"] {
+  stroke: #333333 !important;
+}
+
+/* Hardcoded dark pill/border colors */
+[data-theme="light"] .border-\[\#2F2F2F\],
+[data-theme="light"] .border-\[\#414141\] {
+  border-color: rgba(0, 0, 0, 0.14) !important;
+}
+
+/* Dashboard mockup wrapper border */
+[data-theme="light"] .border-\[\#222\] {
+  border-color: rgba(0, 0, 0, 0.11) !important;
+}
+
+/* Dashboard preview glow — strong and visible on light backgrounds */
+[data-theme="light"] .DashboardPreviewGlow {
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.07),
+    0 8px 24px rgba(0, 0, 0, 0.10),
+    0 24px 60px rgba(0, 0, 0, 0.12),
+    0 0 80px rgba(114, 92, 247, 0.14);
+}
+
+/* Footer section — distinct from page background */
+[data-theme="light"] footer {
+  color: #0d0d0d;
+  background-color: #f3f1fa;
+}
+
+/* Footer top border */
+[data-theme="light"] footer [class*="border-t"] {
+  border-top-color: rgba(0, 0, 0, 0.10) !important;
+}
+
+/* Dashboard preview section — faint brand tint */
+[data-theme="light"] section:has(.DashboardPreviewGlow) {
+  background-color: #f7f5ff;
+}
+
+/* Process section cards — purple-tinted gradient + tighter bolder shadow */
+[data-theme="light"] .rounded-\[18px\].BlackGradient,
+[data-theme="light"] .rounded-\[16px\].BlackGradient {
+  background: linear-gradient(145deg, #ffffff 0%, #f9f7ff 55%, #f3efff 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 4px 14px rgba(100, 70, 220, 0.11),
+    0 10px 24px rgba(100, 70, 220, 0.09) !important;
+}
+
+/* Email/Clock icons on contact page (these are on a light bg) */
+[data-theme="light"] img[src*="Email Icon"],
+[data-theme="light"] img[src*="Clock Icon"],
+[data-theme="light"] img[src*="LinkedIn Icon"] {
+  filter: invert(1) brightness(0.3);
+}
+
+/* FeatureCard border in light mode */
+[data-theme="light"] .FeatureCard {
+  border-color: rgba(0, 0, 0, 0.09);
+}
+
+/* Feature bento cards — purple-tinted shadow + brand border */
+[data-theme="light"] .rounded-\[24px\].overflow-hidden {
+  border: 1px solid rgba(114, 92, 247, 0.11) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 4px 14px rgba(100, 70, 220, 0.09),
+    0 14px 36px rgba(100, 70, 220, 0.08),
+    0 32px 64px rgba(100, 70, 220, 0.05);
+}
+
+/* ============================================================
+   LIGHT MODE — IMAGE SHADOWS
+   ============================================================ */
+
+/* 3D/hero images inside gradient sections — glow against dark bg */
+[data-theme="light"] .BackgroundGradient img:not([src*="logo"]):not([src*="Icon"]):not([src*="Arrow"]):not([src*="Umbrella"]) {
+  filter: drop-shadow(0 20px 50px rgba(160, 120, 255, 0.45)) drop-shadow(0 6px 20px rgba(0, 0, 0, 0.35));
+}
+
+/* Content images inside white cards */
+[data-theme="light"] .BlackGradient img:not([src*="Icon"]):not([src*="logo"]) {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.10));
+}
+
+/* ============================================================
+   LIGHT MODE — DASHBOARD MOCKUP EXCEPTION
+   (The dark mockup inside DashboardPreviewSection stays dark always)
+   ============================================================ */
+
+[data-theme="light"] .DashboardPreviewGlow {
+  color: white;
+}
+
+[data-theme="light"] .DashboardPreviewGlow .text-white {
+  color: white !important;
+}
+
+/* BlackGradient cards inside mockup stay dark */
+[data-theme="light"] .DashboardPreviewGlow .BlackGradient {
+  background: linear-gradient(to bottom right, #1A1A1A 0%, #101010 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: inset 0 0.5px 1px rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Images inside the mockup — no filter overrides */
+[data-theme="light"] .DashboardPreviewGlow img {
+  filter: none !important;
+}
+
+/* Opacity classes inside the mockup — restore original values */
+[data-theme="light"] .DashboardPreviewGlow .opacity-20 { opacity: 0.20 !important; }
+[data-theme="light"] .DashboardPreviewGlow .opacity-25 { opacity: 0.25 !important; }
+[data-theme="light"] .DashboardPreviewGlow .opacity-30 { opacity: 0.30 !important; }
+[data-theme="light"] .DashboardPreviewGlow .opacity-35 { opacity: 0.35 !important; }
+[data-theme="light"] .DashboardPreviewGlow .opacity-40 { opacity: 0.40 !important; }
+[data-theme="light"] .DashboardPreviewGlow .opacity-50 { opacity: 0.50 !important; }
+[data-theme="light"] .DashboardPreviewGlow .opacity-60 { opacity: 0.60 !important; }
+[data-theme="light"] .DashboardPreviewGlow .opacity-70 { opacity: 0.70 !important; }
+
+/* ============================================================
+   LIGHT MODE — TEXT OPACITY BOOSTING
+   (inline opacity on dark mode looks OK on black; on white it's too faint)
+   ============================================================ */
+[data-theme="light"] .opacity-15 { opacity: 0.40 !important; }
+[data-theme="light"] .opacity-20 { opacity: 0.45 !important; }
+[data-theme="light"] .opacity-25 { opacity: 0.50 !important; }
+[data-theme="light"] .opacity-30 { opacity: 0.55 !important; }
+[data-theme="light"] .opacity-35 { opacity: 0.62 !important; }
+[data-theme="light"] .opacity-40 { opacity: 0.68 !important; }
+[data-theme="light"] .opacity-45 { opacity: 0.72 !important; }
+[data-theme="light"] .opacity-50 { opacity: 0.75 !important; }
+[data-theme="light"] .opacity-60 { opacity: 0.80 !important; }
+[data-theme="light"] .opacity-65 { opacity: 0.82 !important; }
+[data-theme="light"] .opacity-70 { opacity: 0.85 !important; }

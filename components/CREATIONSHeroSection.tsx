@@ -5,9 +5,9 @@ import LogInButton from './LogInButton'
 
 const CREATIONSHeroSection = () => {
     return (
-        <section>
-            <div className="flex justify-center rounded-[50px] mx-auto BackgroundGradient pb-[140px] pt-[110px] ">
-                <div className="flex items-start justify-center w-full flex-col max-w-[650px] mr-[75px]">
+        <section className="mt-[86px] sm:mt-[90px]">
+            <div className="flex flex-col lg:flex-row justify-center items-center rounded-b-[50px] mx-auto BackgroundGradient pt-[80px] sm:pt-[100px] pb-[80px] sm:pb-[100px] px-[24px] sm:px-[48px] lg:px-[80px] gap-[40px] lg:gap-0">
+                <div className="flex items-start justify-center w-full flex-col max-w-[650px] lg:mr-[75px]">
                     <div className="flex justify-center items-center border-solid border border-1 border-[#2F2F2F] rounded-full">
                         <div className="flex">
                             <div className="flex items-center my-1.5 mx-4">
@@ -24,14 +24,12 @@ const CREATIONSHeroSection = () => {
                             </div>
                         </div>
                     </div>
-                    <h1 className="TitleFont my-[22px] lg:max-w-[80%] xl:max-w-[100%] max-w-[90%]">We are confident about <span className="TextGradient">our work</span>.</h1>
-                    <div className="max-w-[75%] sm:max-w-[80%] mb-[45px]">
+                    <h1 className="TitleFont my-[22px] max-w-[90%] lg:max-w-[80%] xl:max-w-[100%]">We are confident about <span className="TextGradient">our work</span>.</h1>
+                    <div className="max-w-[75%] sm:max-w-[80%]">
                         <h3 className="TextFont max-w-[95%]">We put <span className="font-medium">time and quality</span> in every project in order to truly satisfy our clients.</h3>
                     </div>
-
-
                 </div>
-                <div className="w-[550px] flex items-center">
+                <div className="w-full max-w-[420px] lg:max-w-none lg:w-[550px] flex items-center flex-shrink-0">
                     <Image
                         src="/3D Time Platform.png"
                         alt="LinkedIn Icon"

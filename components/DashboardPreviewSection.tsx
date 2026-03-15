@@ -177,7 +177,7 @@ const DashboardPreviewSection = () => {
 
                             {/* Welcome */}
                             <div className="mb-[20px] sm:mb-[24px]">
-                                <h3 className="text-[16px] sm:text-[20px] font-semibold">Welcome back, Trey 👋</h3>
+                                <h3 className="text-[16px] sm:text-[20px] font-semibold">Welcome back, James 👋</h3>
                                 <p className="text-[11px] opacity-35 font-light mt-[3px]">Here&apos;s what&apos;s happening with your projects.</p>
                             </div>
 

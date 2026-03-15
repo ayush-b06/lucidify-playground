@@ -75,7 +75,7 @@ const GetStartedSection = () => {
 
             <div
                 ref={containerRef}
-                className="BackgroundGradient rounded-[50px] relative overflow-hidden"
+                className="BackgroundGradient rounded-[50px] relative overflow-hidden mt-[80px] sm:mt-[120px]"
             >
                 {/* Mouse-following glow */}
                 <div
@@ -110,7 +110,7 @@ const GetStartedSection = () => {
                     />
                 ))}
 
-                <div className="relative z-10 flex flex-col items-center sm:max-w-[700px] mx-auto pt-[50px] pb-[150px]">
+                <div className="relative z-10 flex flex-col items-center sm:max-w-[700px] mx-auto pt-[90px] sm:pt-[120px] pb-[90px] sm:pb-[120px] px-[24px] sm:px-[48px]">
                     <div className="flex justify-center items-center rounded-full bg-white shadow-sm shadow-neutral-900">
                         <div className="flex items-center justify-center sm:mx-[16px] sm:my-[8px] mx-[14px] my-[6px]">
                             <div className="flex items-center my-[0px] mx-[2px]">

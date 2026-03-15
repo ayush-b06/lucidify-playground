@@ -73,9 +73,9 @@ const CustomCursor = () => {
                 pointerEvents: 'none',
                 zIndex: 99999,
                 opacity: 0,
-                // Explicitly kill any inherited transition so position updates are instant
                 transition: 'none',
                 willChange: 'transform',
+                mixBlendMode: 'difference',
             }}
         >
             {/* Dot */}
@@ -88,7 +88,6 @@ const CustomCursor = () => {
                     background: 'white',
                     top: '-3px',
                     left: '-3px',
-                    mixBlendMode: 'difference',
                 }}
             />
 
@@ -101,7 +100,6 @@ const CustomCursor = () => {
                         height: '36px',
                         borderRadius: '50%',
                         border: '1.5px solid white',
-                        mixBlendMode: 'difference',
                         transition: 'transform 0.15s ease',
                     }}
                 />
