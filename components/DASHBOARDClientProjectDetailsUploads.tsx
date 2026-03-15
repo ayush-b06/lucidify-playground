@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import Link from 'next/link';
 import DashboardClientSideNav from '@/components/DashboardClientSideNav';
 import DashboardTopBar from './DashboardTopBar';
+import { useTheme } from '@/context/themeContext';
 
 interface DASHBOARDClientProjectDetailsUploadsProps {
     userId: string;
@@ -30,6 +31,25 @@ const DASHBOARDClientProjectDetailsUploads = ({ userId, projectId }: DASHBOARDCl
     const [sectionDesigns, setSectionDesigns] = useState<Design[]>([]);
     const [fullPageDesigns, setFullPageDesigns] = useState<Design[]>([]);
     const [lightboxURL, setLightboxURL] = useState<string | null>(null);
+
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
+    const textColor = isDark ? '#ffffff' : '#111111';
+    const mutedColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
+
+    const tabBase = "px-[14px] h-[34px] rounded-[9px] text-[13px] font-medium whitespace-nowrap transition-all";
+    const activeTabStyle: React.CSSProperties = {
+        background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.09)',
+        color: textColor,
+        boxShadow: isDark ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.08)',
+    };
+    const inactiveTabStyle: React.CSSProperties = { background: 'transparent', color: mutedColor };
+    const disabledTabStyle: React.CSSProperties = { background: 'transparent', color: mutedColor, opacity: 0.35, cursor: 'not-allowed' };
+    const tabBarStyle: React.CSSProperties = {
+        background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+        border: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,0,0,0.07)',
+        borderRadius: '13px', padding: '3px', display: 'inline-flex', gap: '2px',
+    };
 
     useEffect(() => {
         const fetchAll = async () => {
@@ -113,14 +133,16 @@ const DASHBOARDClientProjectDetailsUploads = ({ userId, projectId }: DASHBOARDCl
                     <div className="flex-1 overflow-y-auto px-[20px] sm:px-[50px] pt-[30px] pb-[40px]">
 
                         {/* Tab Nav */}
-                        <div className="flex items-center gap-[20px] sm:gap-[30px] mb-[30px] overflow-x-auto pb-[4px]">
-                            <Link href={`/dashboard/projects/${projectId}?projectId=${projectId}&userId=${userId}`}
-                                className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap hover:text-white">Overview</Link>
-                            <Link href={`/dashboard/projects/${projectId}/progress?projectId=${projectId}&userId=${userId}`}
-                                className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap hover:text-white">Progress</Link>
-                            <Link href={`/dashboard/projects/${projectId}/uploads?projectId=${projectId}&userId=${userId}`}
-                                className="font-normal text-base whitespace-nowrap border-b-2 border-[#725CF7] pb-[2px]">Uploads</Link>
-                            <div className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap opacity-40 cursor-not-allowed">Analytics</div>
+                        <div className="mb-[28px]">
+                            <div style={tabBarStyle}>
+                                <Link href={`/dashboard/projects/${projectId}?projectId=${projectId}&userId=${userId}`}
+                                    className={tabBase} style={inactiveTabStyle}>Overview</Link>
+                                <Link href={`/dashboard/projects/${projectId}/progress?projectId=${projectId}&userId=${userId}`}
+                                    className={tabBase} style={inactiveTabStyle}>Progress</Link>
+                                <Link href={`/dashboard/projects/${projectId}/uploads?projectId=${projectId}&userId=${userId}`}
+                                    className={tabBase} style={activeTabStyle}>Uploads</Link>
+                                <button disabled className={tabBase} style={disabledTabStyle}>Analytics</button>
+                            </div>
                         </div>
 
                         {/* Header */}

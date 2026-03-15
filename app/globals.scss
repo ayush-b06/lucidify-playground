@@ -1431,6 +1431,147 @@ svg {
   }
 }
 
+/* Skip for now button — dark mode needs more contrast since bg is already dark */
+[data-theme="dark"] .GetStartedSkipBtn {
+  border-color: rgba(0,0,0,0.2) !important;
+  background: rgba(0,0,0,0.06) !important;
+  color: rgba(0,0,0,0.55) !important;
+
+  &:hover {
+    border-color: rgba(0,0,0,0.4) !important;
+    background: rgba(0,0,0,0.10) !important;
+    color: rgba(0,0,0,0.85) !important;
+  }
+}
+
+/* FullPageBg — login/signup pages use BackgroundGradient full-screen, no gap */
+.FullPageBg.BackgroundGradient,
+[data-theme="light"] .FullPageBg.BackgroundGradient {
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+@media (min-width: 640px) {
+  [data-theme="light"] .FullPageBg.BackgroundGradient {
+    margin: 0 !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-theme="light"] .FullPageBg.BackgroundGradient {
+    margin: 0 !important;
+  }
+}
+
+/* Login/signup form card — dark background with light text */
+[data-theme="light"] .FullPageBg .bg-gradient-to-br {
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.06) 100%) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+[data-theme="light"] .FullPageBg .text-black {
+  color: white !important;
+}
+
+[data-theme="light"] .FullPageBg .text-gray-500 {
+  color: rgba(255,255,255,0.55) !important;
+}
+
+[data-theme="light"] .FullPageBg h3.text-black {
+  color: rgba(255,255,255,0.85) !important;
+}
+
+[data-theme="light"] .FullPageBg input {
+  background: rgba(255,255,255,0.10) !important;
+  color: white !important;
+  border-color: rgba(255,255,255,0.15) !important;
+}
+
+[data-theme="light"] .FullPageBg input::placeholder {
+  color: rgba(255,255,255,0.45) !important;
+}
+
+[data-theme="light"] .FullPageBg select,
+[data-theme="light"] .FullPageBg textarea {
+  background: rgba(255,255,255,0.10) !important;
+  color: white !important;
+  border-color: rgba(255,255,255,0.15) !important;
+}
+
+[data-theme="light"] .FullPageBg textarea::placeholder {
+  color: rgba(255,255,255,0.45) !important;
+}
+
+[data-theme="light"] .FullPageBg select option {
+  background: #1a1030 !important;
+  color: white !important;
+}
+
+[data-theme="light"] .FullPageBg .text-\[rgba\(0\,0\,0\,0\.6\)\] {
+  color: rgba(255,255,255,0.45) !important;
+}
+
+[data-theme="light"] .FullPageBg .text-\[rgba\(0\,0\,0\,0\.5\)\] {
+  color: rgba(255,255,255,0.45) !important;
+}
+
+/* All buttons inside FullPageBg keep black text (they have light backgrounds) */
+[data-theme="light"] .FullPageBg .button__text {
+  color: rgba(0,0,0,0.75) !important;
+}
+
+/* Tone down the bright white radiating glow on buttons inside dark FullPageBg */
+[data-theme="light"] .FullPageBg .button {
+  box-shadow: 0 0 12px rgba(255,255,255,0.12), 0px 3px 8px rgba(165,180,252,0.35) !important;
+
+  &:hover {
+    box-shadow: 0 0 18px rgba(255,255,255,0.18), 0px 4px 12px rgba(165,180,252,0.45) !important;
+  }
+}
+
+[data-theme="light"] .FullPageBg .ButtonLessBoxShadow,
+[data-theme="light"] .FullPageBg .ButtonMuchLessBoxShadow {
+  box-shadow: 0 0 12px rgba(255,255,255,0.12), 0px 3px 8px rgba(165,180,252,0.35) !important;
+
+  &:hover {
+    box-shadow: 0 0 18px rgba(255,255,255,0.18), 0px 4px 12px rgba(165,180,252,0.45) !important;
+  }
+}
+
+[data-theme="light"] .FullPageBg .ButtonDone {
+  box-shadow: 0 0 18px rgba(255,255,255,0.18), 0px 4px 12px rgba(165,180,252,0.45) !important;
+}
+
+[data-theme="light"] .FullPageBg .buttonHovered {
+  box-shadow: 0 0 18px rgba(255,255,255,0.18), 0px 4px 12px rgba(165,180,252,0.45) !important;
+}
+
+
+[data-theme="light"] .FullPageBg .bg-gray-300,
+[data-theme="light"] .FullPageBg .h-\[1px\] {
+  background-color: rgba(255,255,255,0.15) !important;
+}
+
+[data-theme="light"] .FullPageBg .bg-\[\#725CF7\],
+[data-theme="light"] .FullPageBg .bg-\[\#5D3AEA\] {
+  background-color: white !important;
+  color: #111111 !important;
+}
+
+[data-theme="light"] .FullPageBg .bg-\[\#725CF7\].text-white,
+[data-theme="light"] .FullPageBg .bg-\[\#5D3AEA\].text-white {
+  color: #111111 !important;
+}
+
+[data-theme="light"] .FullPageBg .bg-\[rgba\(114\,92\,247\,0\.5\)\] {
+  background-color: rgba(255,255,255,0.18) !important;
+  color: rgba(255,255,255,0.5) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+}
+
 /* ============================================================
    LIGHT MODE OVERRIDES
    ============================================================ */
@@ -1610,6 +1751,7 @@ svg {
 [data-theme="light"] img[src*="white"] {
   filter: invert(1) brightness(0.3);
 }
+
 
 /* Dark buttons keep their white arrows */
 [data-theme="light"] .bg-\[\#231F1D\] img,
@@ -1873,3 +2015,204 @@ svg {
 [data-theme="light"] .opacity-60 { opacity: 0.80 !important; }
 [data-theme="light"] .opacity-65 { opacity: 0.82 !important; }
 [data-theme="light"] .opacity-70 { opacity: 0.85 !important; }
+
+/* ============================================================
+   DASHBOARD LIGHT MODE
+   Light lavender background + dark text + frosted glass cards
+   ============================================================ */
+
+[data-theme="light"] .DashboardBackgroundGradient {
+  background: radial-gradient(ellipse 130% 90% at top, #f0eaff 0%, #d8c8ff 40%, #c0a8ff 70%, #aa8eff 100%) !important;
+  color: #111111;
+}
+
+/* Purple accent cards — login-page gradient with white text */
+[data-theme="light"] .DashboardBackgroundGradient .DashboardPurpleCard {
+  background: radial-gradient(ellipse 80% 110% at 50% -5%, #251470 0%, #3e28a8 40%, #5c3ecc 70%, #7255e0 100%);
+  box-shadow:
+    0 4px 24px rgba(82, 56, 200, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.08) inset !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  color: white !important;
+
+  * { color: white !important; }
+  .opacity-60 { opacity: 0.60 !important; }
+}
+
+/* Cards → light frosted glass */
+[data-theme="light"] .DashboardBackgroundGradient .BlackGradient {
+  background: rgba(255, 255, 255, 0.82) !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 2px 12px rgba(0, 0, 0, 0.06),
+    0 8px 28px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .DashboardBackgroundGradient .BlackWithLightGradient {
+  background: rgba(255, 255, 255, 0.55) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+[data-theme="light"] .DashboardBackgroundGradient .ContentCardShadow {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 1px 3px rgba(0, 0, 0, 0.07),
+    0 4px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Text: white → dark */
+[data-theme="light"] .DashboardBackgroundGradient .text-white { color: #111111 !important; }
+
+/* White-tinted borders → dark-tinted */
+[data-theme="light"] .DashboardBackgroundGradient .border-white\/10 { border-color: rgba(0, 0, 0, 0.07) !important; }
+[data-theme="light"] .DashboardBackgroundGradient .border-white\/5  { border-color: rgba(0, 0, 0, 0.04) !important; }
+[data-theme="light"] .DashboardBackgroundGradient .border-b         { border-color: rgba(0, 0, 0, 0.07) !important; }
+
+/* White-tinted backgrounds (progress bar tracks, hover rows) → dark-tinted */
+[data-theme="light"] .DashboardBackgroundGradient .bg-white\/10 { background-color: rgba(0, 0, 0, 0.07) !important; }
+[data-theme="light"] .DashboardBackgroundGradient .bg-white\/\[0\.06\] { background-color: rgba(0, 0, 0, 0.04) !important; }
+[data-theme="light"] .DashboardBackgroundGradient .hover\:bg-white\/\[0\.03\]:hover { background-color: rgba(0, 0, 0, 0.03) !important; }
+[data-theme="light"] .DashboardBackgroundGradient .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(0, 0, 0, 0.04) !important; }
+
+/* SVG arrows with hardcoded white stroke */
+[data-theme="light"] .DashboardBackgroundGradient svg path[stroke="white"] { stroke: rgba(0, 0, 0, 0.45) !important; }
+
+/* Images: no filter inversion on dark-background assets */
+[data-theme="light"] .DashboardBackgroundGradient img { filter: none !important; }
+
+/* Add project button (top-right toolbar) — keep purple, remove dark black base */
+[data-theme="light"] .DashboardBackgroundGradient .AddProjectGradient {
+  background: linear-gradient(135deg, #7255e0 0%, #5240c9 100%) !important;
+  box-shadow:
+    0 2px 8px rgba(82, 64, 201, 0.35),
+    0 4px 16px rgba(82, 64, 201, 0.20),
+    inset 0 1px 0 rgba(255, 255, 255, 0.20) !important;
+  color: white !important;
+}
+
+[data-theme="light"] .DashboardBackgroundGradient .AddProjectGradient * {
+  color: white !important;
+}
+
+/* Add a New Project button (bottom of projects list) — light frosted glass */
+[data-theme="light"] .DashboardBackgroundGradient .AddANewProjectGradient {
+  background: rgba(255, 255, 255, 0.75) !important;
+  border: 1.5px dashed rgba(114, 92, 247, 0.35) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  color: #111111 !important;
+}
+
+/* Search bar in side nav */
+[data-theme="light"] .DashboardBackgroundGradient .SearchBackground {
+  background: rgba(255, 255, 255, 0.55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ============================================================
+   LIGHT MODE — MESSAGES PAGE
+   ============================================================ */
+
+/* Conversation list panel (left) — currently from-[#1A1A1A] to-[#101010] */
+[data-theme="light"] .DashboardBackgroundGradient .from-\[\#1A1A1A\].to-\[\#101010\],
+[data-theme="light"] .DashboardBackgroundGradient .from-\[\#1A1A1A\] {
+  background: rgba(255, 255, 255, 0.88) !important;
+  background-image: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+/* Chat panel (right) — from-[#101010] to-[#1A1A1A] */
+[data-theme="light"] .DashboardBackgroundGradient .from-\[\#101010\].to-\[\#1A1A1A\] {
+  background: rgba(248, 246, 255, 0.90) !important;
+  background-image: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+/* Conversation row text in light mode */
+[data-theme="light"] .DashboardBackgroundGradient .from-\[\#1A1A1A\] .text-white,
+[data-theme="light"] .DashboardBackgroundGradient .from-\[\#1A1A1A\].to-\[\#101010\] .text-white {
+  color: #111111 !important;
+}
+
+/* Highlighted/selected conversation row */
+[data-theme="light"] .DashboardBackgroundGradient .MessagesHighlightGradient {
+  background: rgba(114, 92, 247, 0.09) !important;
+  border-color: rgba(114, 92, 247, 0.25) !important;
+}
+
+/* Incoming message bubbles (MessagesHighlightGradient) */
+[data-theme="light"] .DashboardBackgroundGradient .rounded-b-\[15px\].rounded-tr-\[15px\].MessagesHighlightGradient,
+[data-theme="light"] .DashboardBackgroundGradient .MessagesHighlightGradient.rounded-b-\[15px\] {
+  background: rgba(255, 255, 255, 0.90) !important;
+  border: 1px solid rgba(0, 0, 0, 0.07) !important;
+  color: #111111 !important;
+}
+
+/* Conversation row white border lines */
+[data-theme="light"] .DashboardBackgroundGradient .border-white {
+  border-color: rgba(0, 0, 0, 0.07) !important;
+}
+
+/* Conversation search input inside messages */
+[data-theme="light"] .DashboardBackgroundGradient .from-\[\#1A1A1A\] input {
+  background: rgba(255, 255, 255, 0.70) !important;
+  color: #111111 !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme="light"] .DashboardBackgroundGradient .from-\[\#1A1A1A\] input::placeholder {
+  color: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* Chat panel header */
+[data-theme="light"] .DashboardBackgroundGradient .LeftGradientBorder .BlackWithLightGradient {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Message input area */
+[data-theme="light"] .DashboardBackgroundGradient .LeftGradientBorder .BlackGradient {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Message input box */
+[data-theme="light"] .DashboardBackgroundGradient .LeftGradientBorder .BlackWithLightGradient.rounded-\[12px\],
+[data-theme="light"] .DashboardBackgroundGradient .LeftGradientBorder .BlackWithLightGradient.rounded-\[10px\] {
+  background: rgba(245, 243, 255, 0.80) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Message input placeholder */
+[data-theme="light"] .DashboardBackgroundGradient .LeftGradientBorder input::placeholder {
+  color: rgba(0, 0, 0, 0.30) !important;
+}
+
+/* Three-dot menu dots */
+[data-theme="light"] .DashboardBackgroundGradient .LeftGradientBorder .bg-white {
+  background-color: #111111 !important;
+}
+/* Payment ring — light mode */
+[data-theme="light"] .DashboardBackgroundGradient .outer {
+  background-color: rgba(0, 0, 0, 0.07) !important;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08) !important;
+}
+
+[data-theme="light"] .DashboardBackgroundGradient .inner {
+  background: linear-gradient(to bottom right, #ffffff 0%, #f9f8ff 100%) !important;
+  box-shadow:
+    inset 2px 2px 6px rgba(0,0,0,0.06),
+    inset -2px -2px 10px rgba(98,101,240,0.10),
+    0 4px 12px rgba(0,0,0,0.06) !important;
+}

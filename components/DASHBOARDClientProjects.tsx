@@ -1,347 +1,344 @@
+"use client";
+
 import { useEffect, useState } from 'react';
-import { getAuth } from 'firebase/auth';
 import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '../firebaseConfig'; // Firestore instance
+import { db } from '../firebaseConfig';
+import { useAuth } from '@/context/authContext';
 import DashboardClientSideNav from './DashboardClientSideNav';
 import Image from 'next/image';
 import Link from 'next/link';
 import CreateProjectPopup from './CreateProjectPopup';
 import DashboardTopBar from './DashboardTopBar';
+import { useTheme } from '@/context/themeContext';
 
 interface Project {
     uid: string;
     projectName: string;
     logoAttachment: string | null;
+    logoUrl?: string | null;
     progress?: string;
     recentActivity?: string;
     dateCreated?: string;
-    comments?: string;
     approval?: string;
-    paymentPlan?: number;
-    weeksPaid?: number;
     dueDate?: string;
     status?: number;
+    setupComplete?: boolean;
+    projectDescription?: string;
 }
 
-
-
-
-const STATUS_CONFIG: Record<number, { bg: string; border: string; text: string; label: string; dots: number }> = {
-    1: { bg: 'bg-[#5E49E2]', border: 'border-[#7B67FF]', text: 'text-[#ADA0FF]', label: 'Planning', dots: 1 },
-    2: { bg: 'bg-[#A9671C]', border: 'border-[#B56A20]', text: 'text-[#FFD563]', label: 'Designing', dots: 2 },
-    3: { bg: 'bg-[#102A56]', border: 'border-[#153B84]', text: 'text-[#6294E9]', label: 'Developing', dots: 3 },
-    4: { bg: 'bg-[#105625]', border: 'border-[#27733E]', text: 'text-[#62E98F]', label: 'Launching', dots: 4 },
-    5: { bg: 'bg-[#102A56]', border: 'border-[#153B84]', text: 'text-[#6294E9]', label: 'Maintaining', dots: 4 },
+const STATUS_CONFIG: Record<number, { color: string; bg: string; border: string; label: string }> = {
+    1: { color: '#a89cff', bg: 'rgba(114,92,247,0.12)', border: 'rgba(114,92,247,0.25)', label: 'Planning' },
+    2: { color: '#fbbf24', bg: 'rgba(251,191,36,0.12)', border: 'rgba(251,191,36,0.25)', label: 'Designing' },
+    3: { color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.25)', label: 'Developing' },
+    4: { color: '#4ade80', bg: 'rgba(74,222,128,0.12)', border: 'rgba(74,222,128,0.25)', label: 'Launching' },
+    5: { color: '#60a5fa', bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.25)', label: 'Maintaining' },
 };
 
-const DOT_COLORS: Record<number, string> = {
-    1: 'bg-[#ADA0FF]', 2: 'bg-[#FFD563]', 3: 'bg-[#467CD9]', 4: 'bg-[#46D999]', 5: 'bg-[#467CD9]',
-};
-
-const StatusBadge = ({ status }: { status?: number }) => {
-    const s = status ?? 1;
-    const cfg = STATUS_CONFIG[s];
-    if (!cfg) return null;
-    const dotColor = DOT_COLORS[s];
-    return (
-        <div className={`inline-flex ${cfg.bg} border ${cfg.border} rounded-[4px] px-[8px] py-[4px] gap-[6px] items-center`}>
-            <div className="flex flex-wrap gap-[1px] w-[13px] h-[13px]">
-                {[0, 1, 2, 3].map(i => (
-                    <div key={i} className={`rounded-[1px] w-[5px] h-[5px] ${dotColor} ${i < cfg.dots ? 'opacity-100' : 'opacity-30'}`} />
-                ))}
-            </div>
-            <span className={`${cfg.text} text-[13px]`}>{cfg.label}</span>
-        </div>
-    );
-};
-
-const PaymentDots = ({ plan, paid }: { plan?: number; paid?: number }) => {
-    const total = plan ?? 0;
-    if (!total) return <span className="text-[12px] opacity-30 font-light">—</span>;
-    const planLabels: Record<number, string> = { 1: '100% upfront', 2: '2-week', 3: '3-week', 4: '4-week', 5: '5-week' };
-    return (
-        <div className="flex flex-col gap-[4px]">
-            <div className="flex gap-[4px]">
-                {Array.from({ length: total }).map((_, i) => (
-                    <div key={i} className={`w-[13px] h-[13px] PopupAttentionGradient rounded-[3px] ${i < (paid ?? 0) ? 'opacity-100' : 'opacity-30'}`} />
-                ))}
-            </div>
-            <span className="text-[10px] opacity-40 font-light">{planLabels[total]}</span>
-        </div>
-    );
+const formatDate = (iso?: string) => {
+    if (!iso || iso === 'N/A') return null;
+    try {
+        return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    } catch { return iso; }
 };
 
 const DASHBOARDClientProjects = () => {
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
+
     const [projects, setProjects] = useState<Project[]>([]);
-    const [loading, setLoading] = useState(true); // To handle loading state
-    const [firstName, setFirstName] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
     const [isCreateProjectPopupOpen, setIsCreateProjectPopupOpen] = useState(false);
-    const [showNotifications, setShowNotifications] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    const toggleCreateProjectPopup = () => {
-        setIsCreateProjectPopupOpen(!isCreateProjectPopupOpen);
-    };
+    const toggleCreateProjectPopup = () => setIsCreateProjectPopupOpen(p => !p);
 
-    const handleDeleteProject = async (uid: string) => {
-        const user = auth.currentUser;
-
-        if (!user) {
-            alert('User is not logged in');
-            return;
-        }
-
-        // Confirmation dialog
-        const confirmed = window.confirm("Are you sure you want to cancel this project?");
-        if (!confirmed) {
-            return; // Exit if the user does not confirm
-        }
-
-        try {
-            // Reference to the specific project document to delete
-            const projectRef = doc(db, "users", user.uid, "projects", uid);
-            await deleteDoc(projectRef);
-            // Optionally refresh the project list
-            setProjects(projects.filter((project) => project.uid !== uid));
-        } catch (error) {
-            alert('Error deleting project');
-            console.error('Error deleting project: ', error);
-        }
-    };
-
-    const auth = getAuth();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
-    const user = auth.currentUser;
+
+    const fetchProjects = async () => {
+        if (!user) { router.push('/login'); return; }
+        try {
+            const snap = await getDocs(collection(db, 'users', user.uid, 'projects'));
+            const list: Project[] = [];
+            snap.forEach(d => {
+                const data = d.data() as Project;
+                list.push({
+                    uid: d.id,
+                    projectName: data.projectName || 'Unnamed Project',
+                    logoAttachment: data.logoAttachment || null,
+                    logoUrl: data.logoUrl || null,
+                    progress: data.progress || '0',
+                    recentActivity: data.recentActivity || null,
+                    dateCreated: data.dateCreated || null,
+                    approval: data.approval || 'pending',
+                    dueDate: data.dueDate || null,
+                    status: data.status || 1,
+                    setupComplete: data.setupComplete ?? false,
+                    projectDescription: data.projectDescription || '',
+                } as Project);
+            });
+            setProjects(list);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchProjects = async () => {
+        if (!authLoading) fetchProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [authLoading]);
 
-            if (!user) {
-                // Redirect to login page if user is not authenticated
-                router.push('/login');
-                return;
-            }
+    const handleDeleteProject = async (uid: string) => {
+        if (!user) return;
+        if (!window.confirm('Are you sure you want to cancel this project?')) return;
+        setDeletingId(uid);
+        try {
+            await deleteDoc(doc(db, 'users', user.uid, 'projects', uid));
+            setProjects(prev => prev.filter(p => p.uid !== uid));
+        } catch { alert('Error cancelling project.'); }
+        finally { setDeletingId(null); }
+    };
 
-            try {
-                // Fetch the projects subcollection under the current user's document
-                const projectsRef = collection(db, "users", user.uid, "projects");
-                const projectsSnapshot = await getDocs(projectsRef);
-
-                const projectsList: Project[] = [];
-                projectsSnapshot.forEach((doc) => {
-                    const projectData = doc.data() as Project;
-                    projectsList.push({
-                        uid: doc.id, // Add this line to get the document ID
-                        projectName: projectData.projectName || 'Unnamed Project',
-                        logoAttachment: projectData.logoAttachment || null,
-                        progress: projectData.progress || '5',
-                        recentActivity: projectData.recentActivity || 'N/A',
-                        dateCreated: projectData.dateCreated || 'N/A',
-                        comments: projectData.comments || 'No new tasks',
-                        approval: projectData.approval || 'Pending',
-                        paymentPlan: projectData.paymentPlan || 0,
-                        weeksPaid: projectData.weeksPaid || 0,
-                        dueDate: projectData.dueDate || 'No deadline',
-                        status: projectData.status || 1,
-                    });
-                });
-
-                setProjects(projectsList);
-            } catch (error) {
-                console.error("Error fetching projects:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchProjects();
-    }, [auth, router]);
+    // Theme tokens
+    const textColor = isDark ? '#ffffff' : '#111111';
+    const mutedColor = isDark ? 'rgba(255,255,255,0.40)' : 'rgba(0,0,0,0.40)';
+    const cardBg = isDark ? 'linear-gradient(145deg, #141416 0%, #0f0f11 100%)' : 'rgba(255,255,255,0.88)';
+    const cardBorder = isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,0,0,0.07)';
+    const trackBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
 
     return (
         <div className="flex flex-col xl:flex-row h-screen DashboardBackgroundGradient overflow-hidden">
-            <CreateProjectPopup closeCreatProjectPopup={toggleCreateProjectPopup} isVisible={isCreateProjectPopupOpen} />
+            <CreateProjectPopup
+                closeCreatProjectPopup={toggleCreateProjectPopup}
+                isVisible={isCreateProjectPopupOpen}
+                onCreated={fetchProjects}
+            />
 
-            {/* Left Sidebar */}
             <DashboardClientSideNav highlight="projects" />
 
-            {/* Right Side (Main Content) */}
             <div className="flex-1 flex flex-col pt-[60px] xl:pt-0 min-h-0 overflow-hidden">
                 <DashboardTopBar title="Projects" />
 
                 <div className="flex-1 overflow-y-auto px-[20px] sm:px-[50px] pt-[30px] pb-[40px]">
 
-                    {/* Page Header */}
-                    <div className="flex flex-col gap-[4px] mb-[28px]">
-                        <h1 className="font-semibold text-[26px]">Projects</h1>
-                        <p className="font-normal text-[#ffffff99] text-sm">View and manage your projects.</p>
-                    </div>
-
-                    {/* Toolbar */}
-                    <div className="flex items-center justify-between mb-[24px]">
-                        <div className="flex items-center gap-[24px]">
-                            <button className="font-normal text-base border-b-2 border-[#725CF7] pb-[2px]">Current</button>
-                            <button className="font-normal text-[#ffffff66] text-base hover:text-white">Past</button>
+                    {/* Header + toolbar */}
+                    <div className="flex items-end justify-between mb-[28px]">
+                        <div>
+                            <h1 className="font-semibold text-[26px]">Projects</h1>
+                            <p className="text-[14px] mt-[3px] opacity-50">View and manage your projects.</p>
                         </div>
                         <button
                             onClick={toggleCreateProjectPopup}
-                            className="flex items-center gap-[8px] px-[16px] h-[41px] rounded-[10px] ContentCardShadow AddProjectGradient"
+                            className="flex items-center gap-[8px] px-[18px] h-[42px] rounded-[12px] ContentCardShadow AddProjectGradient text-white text-[14px] font-medium transition-opacity hover:opacity-85 active:scale-[0.98]"
                         >
-                            <div className="w-[14px] flex-shrink-0">
-                                <Image src="/Plus Icon.png" alt="Plus Icon" layout="responsive" width={0} height={0} />
-                            </div>
-                            <span className="font-normal text-[14px]">Add project</span>
+                            <span className="text-[16px] leading-none">+</span>
+                            New project
                         </button>
                     </div>
 
-                    {/* Project List */}
+                    {/* States */}
                     {loading ? (
-                        <div className="py-[34px] opacity-60 text-sm">Loading projects...</div>
-                    ) : projects.length > 0 ? (
-                        <>
-                            {/* Desktop table header */}
-                            <div className="hidden lg:grid grid-cols-[auto_1fr_1fr_auto_auto_auto_auto] gap-x-[16px] items-center px-[20px] mb-[10px] text-[#ffffff66] text-[12px] font-normal">
-                                <div className="w-[40px]" />
-                                <div>Name</div>
-                                <div>Recent Activity</div>
-                                <div className="w-[120px]">Status</div>
-                                <div className="w-[110px]">Progress</div>
-                                <div className="w-[100px]">Payment</div>
-                                <div className="w-[110px]">Deadline</div>
-                            </div>
-
-                            <div className="flex flex-col gap-[12px]">
-                                {projects.map((project, index) => (
-                                    <div
-                                        key={index}
-                                        className={`${project.approval === "Pending" ? "TransparentBlackWithLightGradient" : "BlackWithLightGradient"} relative rounded-[12px] ContentCardShadow overflow-hidden`}
-                                    >
-                                        {/* Pending overlay */}
-                                        {project.approval === "Pending" && (
-                                            <div className="absolute inset-0 z-10 flex items-center justify-center gap-[16px]">
-                                                <div className="flex justify-center items-center rounded-full PendingGradient">
-                                                    <div className="text-[13px] font-semibold px-[14px] py-[6px]">Pending Approval</div>
-                                                </div>
-                                                <button
-                                                    onClick={() => handleDeleteProject(project.uid)}
-                                                    className="flex justify-center items-center rounded-full bg-[#1A1A1A] hover:bg-[#F13F5E] ContentCardShadow transition-colors"
-                                                >
-                                                    <div className="text-[13px] font-light px-[18px] py-[6px]">Cancel Project</div>
-                                                </button>
-                                            </div>
-                                        )}
-
-                                        {/* View overlay (approved) */}
-                                        {project.approval === "Approved" && user && (
-                                            <Link
-                                                href={`/dashboard/projects/${project.uid}?projectId=${project.uid}&userId=${user.uid}`}
-                                                className="ClientProjectHover absolute inset-0 z-10 flex items-center justify-center hover:bg-black/60 rounded-[12px] transition-colors"
-                                            >
-                                                <div className="ClientProject opacity-0 rounded-full BlackWithLightGradient ContentCardShadow flex items-center gap-[8px]">
-                                                    <h3 className="pl-[18px] text-[14px] font-light">View Project</h3>
-                                                    <div className="PopupAttentionGradient PopupAttentionShadow p-[10px] rounded-full">
-                                                        <div className="w-[15px] rotate-[135deg]">
-                                                            <Image src="/Left White Arrow.png" alt="Arrow" layout="responsive" width={0} height={0} />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        )}
-
-                                        <div className={`${project.approval === "Pending" ? "opacity-50" : ""} px-[20px] py-[18px]`}>
-
-                                            {/* Mobile layout */}
-                                            <div className="flex lg:hidden flex-col gap-[12px]">
-                                                <div className="flex items-center gap-[12px]">
-                                                    <div className="w-[36px] h-[36px] flex-shrink-0">
-                                                        <Image
-                                                            src={project.logoAttachment ?? "/Lucidify Umbrella.png"}
-                                                            alt="Project Logo"
-                                                            layout="responsive"
-                                                            width={0}
-                                                            height={0}
-                                                        />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="font-medium text-[14px] truncate">{project.projectName}</p>
-                                                        <p className="text-[11px] opacity-40 font-light">Created {project.dateCreated}</p>
-                                                    </div>
-                                                    {/* Status badge */}
-                                                    <StatusBadge status={project.status} />
-                                                </div>
-                                                <div className="flex items-center gap-[10px]">
-                                                    <div className="flex-1 h-[6px] rounded-full bg-[#333741]">
-                                                        <div className="h-full rounded-full bg-[#5840F0]" style={{ width: `${project.progress}%` }} />
-                                                    </div>
-                                                    <span className="text-[11px] opacity-50 font-light flex-shrink-0">{project.progress}%</span>
-                                                </div>
-                                                <div className="flex items-center justify-between text-[12px] opacity-50 font-light">
-                                                    <span>{project.recentActivity}</span>
-                                                    <span>Due {project.dueDate}</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Desktop layout */}
-                                            <div className="hidden lg:grid grid-cols-[auto_1fr_1fr_auto_auto_auto_auto] gap-x-[16px] items-center">
-                                                {/* Logo */}
-                                                <div className="w-[40px] h-[40px] flex-shrink-0">
-                                                    <Image
-                                                        src={project.logoAttachment ?? "/Lucidify Umbrella.png"}
-                                                        alt="Project Logo"
-                                                        layout="responsive"
-                                                        width={0}
-                                                        height={0}
-                                                    />
-                                                </div>
-                                                {/* Name */}
-                                                <div className="min-w-0">
-                                                    <p className="font-normal text-[13px] truncate">{project.projectName}</p>
-                                                    <div className="flex items-center gap-[4px] opacity-40 font-light mt-[2px]">
-                                                        <div className="w-[10px]">
-                                                            <Image src="/Calendar Icon.png" alt="Calendar" layout="responsive" width={0} height={0} />
-                                                        </div>
-                                                        <p className="text-[11px]">Created {project.dateCreated}</p>
-                                                    </div>
-                                                </div>
-                                                {/* Recent Activity */}
-                                                <div className="text-[13px] font-light opacity-70 truncate">{project.recentActivity}</div>
-                                                {/* Status */}
-                                                <div className="w-[120px]">
-                                                    <StatusBadge status={project.status} />
-                                                </div>
-                                                {/* Progress */}
-                                                <div className="w-[110px] flex items-center gap-[8px]">
-                                                    <div className="flex-1 h-[6px] rounded-full bg-[#333741]">
-                                                        <div className="h-full rounded-full bg-[#5840F0]" style={{ width: `${project.progress}%` }} />
-                                                    </div>
-                                                    <span className="text-[11px] opacity-50 font-light w-[28px] text-right">{project.progress}%</span>
-                                                </div>
-                                                {/* Payment */}
-                                                <div className="w-[100px]">
-                                                    <PaymentDots plan={project.paymentPlan} paid={project.weeksPaid} />
-                                                </div>
-                                                {/* Deadline */}
-                                                <div className="w-[110px] text-[13px] font-light opacity-70 text-right">{project.dueDate}</div>
-                                            </div>
-
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    ) : null}
-
-                    {/* Add New Project Button */}
-                    <div
-                        className="flex w-full h-[80px] items-center justify-center gap-[10px] mt-[16px] rounded-[12px] ContentCardShadow AddANewProjectGradient hover:cursor-pointer"
-                        onClick={toggleCreateProjectPopup}
-                    >
-                        <div className="flex gap-[8px] items-center opacity-60">
-                            <span className="font-light text-[14px]">Add a New Project</span>
-                            <div className="w-[14px]">
-                                <Image src="/Plus Icon.png" alt="Plus Icon" layout="responsive" width={0} height={0} />
-                            </div>
+                        <div className="flex flex-col gap-[12px]">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="h-[100px] rounded-[16px] animate-pulse"
+                                    style={{ background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)' }} />
+                            ))}
                         </div>
-                    </div>
+                    ) : projects.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-[70px] gap-[14px] rounded-[20px]"
+                            style={{ background: cardBg, border: cardBorder }}>
+                            <div className="text-[44px] opacity-20">📂</div>
+                            <p className="text-[15px] font-medium opacity-40">No projects yet</p>
+                            <p className="text-[13px] opacity-30 mb-[4px]">Click "New project" above to get started.</p>
+                            <button
+                                onClick={toggleCreateProjectPopup}
+                                className="mt-[4px] px-[20px] h-[40px] rounded-[12px] text-[13px] font-medium text-white transition-opacity hover:opacity-85"
+                                style={{ background: 'linear-gradient(135deg, #5240c9, #7255e0)', boxShadow: '0 4px 16px rgba(82,56,200,0.35)' }}
+                            >
+                                Create your first project
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-[12px]">
+                            {projects.map((project) => {
+                                const statusCfg = STATUS_CONFIG[project.status ?? 1];
+                                const logoSrc = project.logoUrl || project.logoAttachment || '/Lucidify Umbrella.png';
+                                const progressNum = parseFloat(project.progress || '0');
+                                const isSetupIncomplete = !project.setupComplete;
+                                const isPending = project.setupComplete && project.approval?.toLowerCase() !== 'approved';
+                                const isApproved = project.setupComplete && project.approval?.toLowerCase() === 'approved';
+
+                                const cardHref = isSetupIncomplete && user
+                                    ? `/dashboard/projects/${project.uid}/setup?userId=${user.uid}&projectId=${project.uid}`
+                                    : isApproved && user
+                                    ? `/dashboard/projects/${project.uid}?projectId=${project.uid}&userId=${user.uid}`
+                                    : null;
+
+                                const cardStyle = {
+                                    background: cardBg,
+                                    border: cardBorder,
+                                    boxShadow: isDark ? '0 2px 16px rgba(0,0,0,0.35)' : '0 2px 16px rgba(0,0,0,0.07)',
+                                    opacity: isPending ? 0.65 : 1,
+                                };
+
+                                const innerContent = (
+                                    <>
+                                        {/* Setup incomplete: accent top bar */}
+                                        {isSetupIncomplete && (
+                                            <div className="h-[3px] w-full"
+                                                style={{ background: 'linear-gradient(to right, #5240c9, #7255e0)' }} />
+                                        )}
+
+                                        {/* Card content */}
+                                        <div className="px-[22px] py-[20px]">
+                                            <div className="flex items-center gap-[16px]">
+
+                                                {/* Logo */}
+                                                <div className="relative w-[46px] h-[46px] flex-shrink-0 rounded-[12px] overflow-hidden"
+                                                    style={{ background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)' }}>
+                                                    <Image src={logoSrc} alt="Logo" layout="fill" objectFit="contain" />
+                                                </div>
+
+                                                {/* Name + meta */}
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-[10px] flex-wrap">
+                                                        <p className="font-semibold text-[15px] truncate">{project.projectName}</p>
+
+                                                        {/* State chips */}
+                                                        {isSetupIncomplete && (
+                                                            <span className="flex items-center gap-[5px] px-[8px] py-[3px] rounded-[6px] text-[11px] font-medium flex-shrink-0"
+                                                                style={{ background: 'rgba(114,85,224,0.15)', color: '#a89cff', border: '1px solid rgba(114,85,224,0.25)' }}>
+                                                                Setup needed
+                                                            </span>
+                                                        )}
+                                                        {isPending && (
+                                                            <span className="flex items-center gap-[5px] px-[8px] py-[3px] rounded-[6px] text-[11px] font-medium flex-shrink-0"
+                                                                style={{ background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>
+                                                                Pending approval
+                                                            </span>
+                                                        )}
+                                                        {isApproved && (
+                                                            <span className="flex items-center gap-[5px] px-[8px] py-[3px] rounded-[6px] text-[11px] font-medium flex-shrink-0"
+                                                                style={{ background: statusCfg.bg, color: statusCfg.color, border: `1px solid ${statusCfg.border}` }}>
+                                                                {statusCfg.label}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Sub-row */}
+                                                    <div className="flex items-center gap-[16px] mt-[5px] flex-wrap">
+                                                        {project.dateCreated && (
+                                                            <span className="text-[12px]" style={{ color: mutedColor }}>
+                                                                Created {formatDate(project.dateCreated)}
+                                                            </span>
+                                                        )}
+                                                        {project.recentActivity && project.recentActivity !== 'N/A' && (
+                                                            <span className="text-[12px] truncate max-w-[200px]" style={{ color: mutedColor }}>
+                                                                {project.recentActivity}
+                                                            </span>
+                                                        )}
+                                                        {project.dueDate && (
+                                                            <span className="text-[12px]" style={{ color: mutedColor }}>
+                                                                Due {formatDate(project.dueDate) ?? project.dueDate}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Right: progress (desktop only) + cancel */}
+                                                <div className="hidden sm:flex items-center gap-[20px] flex-shrink-0">
+                                                    {isApproved && (
+                                                        <div className="flex flex-col gap-[6px] w-[120px]">
+                                                            <div className="flex items-center justify-between">
+                                                                <span className="text-[11px]" style={{ color: mutedColor }}>Progress</span>
+                                                                <span className="text-[11px] font-medium" style={{ color: textColor }}>{progressNum}%</span>
+                                                            </div>
+                                                            <div className="h-[5px] rounded-full overflow-hidden" style={{ background: trackBg }}>
+                                                                <div className="h-full rounded-full transition-all duration-700"
+                                                                    style={{ width: `${progressNum}%`, background: 'linear-gradient(to right, #5240c9, #7255e0)' }} />
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {isPending && (
+                                                        <button
+                                                            onClick={() => handleDeleteProject(project.uid)}
+                                                            disabled={deletingId === project.uid}
+                                                            className="px-[14px] h-[34px] rounded-[10px] text-[12px] font-medium transition-all hover:opacity-80 disabled:opacity-40 flex-shrink-0"
+                                                            style={{
+                                                                background: isDark ? 'rgba(241,63,94,0.10)' : 'rgba(241,63,94,0.08)',
+                                                                color: '#f87171',
+                                                                border: '1px solid rgba(241,63,94,0.25)',
+                                                            }}
+                                                        >
+                                                            {deletingId === project.uid ? 'Cancelling...' : 'Cancel'}
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Mobile: progress bar */}
+                                            {isApproved && (
+                                                <div className="sm:hidden mt-[14px] flex items-center gap-[10px]">
+                                                    <div className="flex-1 h-[5px] rounded-full overflow-hidden" style={{ background: trackBg }}>
+                                                        <div className="h-full rounded-full" style={{ width: `${progressNum}%`, background: 'linear-gradient(to right, #5240c9, #7255e0)' }} />
+                                                    </div>
+                                                    <span className="text-[11px] flex-shrink-0" style={{ color: mutedColor }}>{progressNum}%</span>
+                                                </div>
+                                            )}
+
+                                            {/* Mobile: cancel button */}
+                                            {isPending && (
+                                                <div className="sm:hidden mt-[12px]">
+                                                    <button
+                                                        onClick={() => handleDeleteProject(project.uid)}
+                                                        disabled={deletingId === project.uid}
+                                                        className="px-[14px] h-[32px] rounded-[10px] text-[12px] font-medium"
+                                                        style={{ background: 'rgba(241,63,94,0.10)', color: '#f87171', border: '1px solid rgba(241,63,94,0.25)' }}
+                                                    >
+                                                        Cancel project
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </>
+                                );
+
+                                return cardHref ? (
+                                    <Link
+                                        key={project.uid}
+                                        href={cardHref}
+                                        className="block rounded-[16px] overflow-hidden transition-all duration-200 hover:opacity-90 active:scale-[0.995] cursor-pointer"
+                                        style={cardStyle}
+                                    >
+                                        {innerContent}
+                                    </Link>
+                                ) : (
+                                    <div key={project.uid} className="rounded-[16px] overflow-hidden transition-all duration-200" style={cardStyle}>
+                                        {innerContent}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* Bottom add button */}
+                    {!loading && (
+                        <button
+                            onClick={toggleCreateProjectPopup}
+                            className="flex w-full items-center justify-center gap-[10px] mt-[14px] h-[72px] rounded-[16px] transition-all hover:opacity-80 active:scale-[0.99]"
+                            style={{
+                                background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                                border: isDark ? '1.5px dashed rgba(255,255,255,0.10)' : '1.5px dashed rgba(0,0,0,0.12)',
+                            }}
+                        >
+                            <span className="text-[20px] leading-none" style={{ color: mutedColor }}>+</span>
+                            <span className="text-[14px] font-medium" style={{ color: mutedColor }}>Add a new project</span>
+                        </button>
+                    )}
 
                 </div>
             </div>

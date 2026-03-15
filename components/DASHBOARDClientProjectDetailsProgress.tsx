@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import Link from 'next/link';
 import Image from 'next/image';
 import DashboardClientSideNav from '@/components/DashboardClientSideNav';
 import DashboardTopBar from './DashboardTopBar';
+import { useTheme } from '@/context/themeContext';
 
 interface DASHBOARDClientProjectDetailsProgressProps {
     userId: string;
@@ -108,6 +109,28 @@ const DASHBOARDClientProjectDetailsProgress = ({ userId, projectId }: DASHBOARDC
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const { theme } = useTheme();
+    const isDark = theme === 'dark';
+    const textColor = isDark ? '#ffffff' : '#111111';
+    const mutedColor = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
+    const dividerColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)';
+    const trackBg = isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)';
+    const cardItemBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)';
+
+    const tabBase = "px-[14px] h-[34px] rounded-[9px] text-[13px] font-medium whitespace-nowrap transition-all";
+    const activeTabStyle: React.CSSProperties = {
+        background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.09)',
+        color: textColor,
+        boxShadow: isDark ? '0 1px 4px rgba(0,0,0,0.3)' : '0 1px 4px rgba(0,0,0,0.08)',
+    };
+    const inactiveTabStyle: React.CSSProperties = { background: 'transparent', color: mutedColor };
+    const disabledTabStyle: React.CSSProperties = { background: 'transparent', color: mutedColor, opacity: 0.35, cursor: 'not-allowed' };
+    const tabBarStyle: React.CSSProperties = {
+        background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
+        border: isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,0,0,0.07)',
+        borderRadius: '13px', padding: '3px', display: 'inline-flex', gap: '2px',
+    };
+
     useEffect(() => {
         const fetchProjectDetails = async () => {
             if (!userId || !projectId) return;
@@ -176,20 +199,16 @@ const DASHBOARDClientProjectDetailsProgress = ({ userId, projectId }: DASHBOARDC
                 {/* Scrollable Content */}
                 <div className="flex-1 overflow-y-auto px-[20px] sm:px-[50px] pt-[30px] pb-[40px]">
                     {/* Tab Nav */}
-                    <div className="flex items-center gap-[20px] sm:gap-[30px] mb-[30px] overflow-x-auto pb-[4px]">
-                        <Link href={`/dashboard/projects/${projectId}?projectId=${projectId}&userId=${userId}`}
-                            className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap hover:text-white">
-                            Overview
-                        </Link>
-                        <Link href={`/dashboard/projects/${projectId}/progress?projectId=${projectId}&userId=${userId}`}
-                            className="font-normal text-base whitespace-nowrap border-b-2 border-[#725CF7] pb-[2px]">
-                            Progress
-                        </Link>
-                        <Link href={`/dashboard/projects/${projectId}/uploads?projectId=${projectId}&userId=${userId}`}
-                            className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap hover:text-white">
-                            Uploads
-                        </Link>
-                        <div className="font-normal text-[#ffffff66] text-sm sm:text-base whitespace-nowrap opacity-40 cursor-not-allowed">Analytics</div>
+                    <div className="mb-[28px]">
+                        <div style={tabBarStyle}>
+                            <Link href={`/dashboard/projects/${projectId}?projectId=${projectId}&userId=${userId}`}
+                                className={tabBase} style={inactiveTabStyle}>Overview</Link>
+                            <Link href={`/dashboard/projects/${projectId}/progress?projectId=${projectId}&userId=${userId}`}
+                                className={tabBase} style={activeTabStyle}>Progress</Link>
+                            <Link href={`/dashboard/projects/${projectId}/uploads?projectId=${projectId}&userId=${userId}`}
+                                className={tabBase} style={inactiveTabStyle}>Uploads</Link>
+                            <button disabled className={tabBase} style={disabledTabStyle}>Analytics</button>
+                        </div>
                     </div>
 
                     {/* Hero Progress Banner */}
@@ -220,7 +239,7 @@ const DASHBOARDClientProjectDetailsProgress = ({ userId, projectId }: DASHBOARDC
 
                         {/* Full progress bar */}
                         <div className="mt-[24px]">
-                            <div className="h-[8px] rounded-full bg-white/10">
+                            <div className="h-[8px] rounded-full" style={{ background: trackBg }}>
                                 <div
                                     className="h-full rounded-full"
                                     style={{
@@ -252,15 +271,16 @@ const DASHBOARDClientProjectDetailsProgress = ({ userId, projectId }: DASHBOARDC
                                             <div className={`w-[44px] h-[44px] rounded-full flex items-center justify-center text-[18px] transition-all
                                                 ${isDone ? 'bg-[#725CF7]/20 ring-2 ring-[#725CF7]' : ''}
                                                 ${isCurrent ? 'PopupAttentionGradient PopupAttentionShadow ring-2 ring-white/20' : ''}
-                                                ${isFuture ? 'bg-white/5 opacity-30' : ''}
-                                            `}>
+                                                ${isFuture ? 'opacity-30' : ''}
+                                            `}
+                                                style={isFuture ? { background: cardItemBg } : undefined}
+                                            >
                                                 {isDone ? '✓' : stage.icon}
                                             </div>
-                                            <div className={`text-[11px] sm:text-[12px] font-medium whitespace-nowrap
-                                                ${isDone ? 'text-[#725CF7]' : ''}
-                                                ${isCurrent ? 'text-white' : ''}
-                                                ${isFuture ? 'opacity-30' : ''}
-                                            `}>
+                                            <div
+                                                className="text-[11px] sm:text-[12px] font-medium whitespace-nowrap"
+                                                style={{ color: isCurrent ? textColor : isDone ? '#725CF7' : mutedColor, opacity: isFuture ? 0.3 : 1 }}
+                                            >
                                                 {stage.label}
                                             </div>
                                             {isCurrent && (
@@ -268,9 +288,10 @@ const DASHBOARDClientProjectDetailsProgress = ({ userId, projectId }: DASHBOARDC
                                             )}
                                         </div>
                                         {i < STAGES.length - 1 && (
-                                            <div className={`w-[30px] sm:w-[60px] h-[2px] mx-[4px] sm:mx-[8px] mb-[24px] rounded-full flex-shrink-0
-                                                ${stage.id < currentStage ? 'bg-[#725CF7]' : 'bg-white/10'}
-                                            `} />
+                                            <div
+                                                className="w-[30px] sm:w-[60px] h-[2px] mx-[4px] sm:mx-[8px] mb-[24px] rounded-full flex-shrink-0"
+                                                style={{ background: stage.id < currentStage ? '#725CF7' : (isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.10)') }}
+                                            />
                                         )}
                                     </div>
                                 );
@@ -288,12 +309,13 @@ const DASHBOARDClientProjectDetailsProgress = ({ userId, projectId }: DASHBOARDC
                                 </div>
                                 <p className="text-[13px] font-light opacity-60 leading-[1.6]">{stageData.headline}</p>
                             </div>
-                            <p className="text-[13px] font-light opacity-50 leading-[1.7] border-t border-white/5 pt-[16px]">
+                            <p className="text-[13px] font-light opacity-50 leading-[1.7] pt-[16px]"
+                                style={{ borderTop: `1px solid ${dividerColor}` }}>
                                 {stageData.description}
                             </p>
 
                             {/* Next up */}
-                            <div className="border-t border-white/5 pt-[16px]">
+                            <div className="pt-[16px]" style={{ borderTop: `1px solid ${dividerColor}` }}>
                                 <p className="text-[11px] opacity-40 uppercase tracking-wide mb-[12px]">Coming Up Next</p>
                                 <div className="flex flex-col gap-[8px]">
                                     {stageData.nextUp.map((item, i) => (
@@ -316,10 +338,13 @@ const DASHBOARDClientProjectDetailsProgress = ({ userId, projectId }: DASHBOARDC
                                 {stageData.milestones.map((label, i) => {
                                     const done = currentMilestoneStates[i] || false;
                                     return (
-                                        <div key={i} className={`flex items-center gap-[14px] px-[16px] py-[12px] rounded-[12px] ${done ? 'bg-[#725CF7]/10' : 'bg-white/[0.03]'}`}>
+                                        <div key={i} className={`flex items-center gap-[14px] px-[16px] py-[12px] rounded-[12px]`}
+                                            style={{ background: done ? 'rgba(114,92,247,0.10)' : cardItemBg }}>
                                             <div className={`w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0 text-[11px] font-bold
-                                                ${done ? 'PopupAttentionGradient' : 'border border-white/20 opacity-40'}
-                                            `}>
+                                                ${done ? 'PopupAttentionGradient' : 'opacity-40'}
+                                            `}
+                                                style={!done ? { border: `1px solid ${isDark ? 'rgba(255,255,255,0.20)' : 'rgba(0,0,0,0.20)'}` } : undefined}
+                                            >
                                                 {done ? '✓' : ''}
                                             </div>
                                             <span className={`text-[13px] font-light ${done ? 'opacity-90' : 'opacity-40'}`}>{label}</span>
@@ -330,11 +355,11 @@ const DASHBOARDClientProjectDetailsProgress = ({ userId, projectId }: DASHBOARDC
                             </div>
 
                             {/* Completion count */}
-                            <div className="border-t border-white/5 pt-[14px] flex items-center justify-between">
+                            <div className="pt-[14px] flex items-center justify-between" style={{ borderTop: `1px solid ${dividerColor}` }}>
                                 <span className="text-[12px] opacity-40">
                                     {currentMilestoneStates.filter(Boolean).length} of {stageData.milestones.length} completed
                                 </span>
-                                <div className="w-[80px] h-[4px] rounded-full bg-white/10">
+                                <div className="w-[80px] h-[4px] rounded-full" style={{ background: trackBg }}>
                                     <div
                                         className="h-full rounded-full"
                                         style={{

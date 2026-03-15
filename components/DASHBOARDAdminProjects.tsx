@@ -11,6 +11,7 @@ interface Project {
     projectName: string;
     progress?: string;
     logoAttachment?: string | null;
+    logoUrl?: string | null;
     recentActivity?: string;
     dateCreated?: string;
     comments?: string;
@@ -77,7 +78,7 @@ const DASHBOARDAdminProjects = () => {
                             uid: projectDoc.id,
                             projectName: d.projectName || 'Unnamed Project',
                             progress: d.progress || '5',
-                            logoAttachment: d.logoAttachment || null,
+                            logoAttachment: d.logoUrl || d.logoAttachment || null,
                             recentActivity: d.recentActivity || 'N/A',
                             dateCreated: d.dateCreated || 'N/A',
                             comments: d.comments || 'No new tasks',
