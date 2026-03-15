@@ -94,7 +94,7 @@ const DashboardPreviewSection = () => {
                     onMouseMove={handleMockupMouseMove}
                     onMouseLeave={handleMockupMouseLeave}
                     onMouseEnter={handleMockupMouseEnter}
-                    className="FadeInUp4 w-full max-w-[900px] rounded-[20px] overflow-hidden border border-[#222] DashboardPreviewGlow"
+                    className="FadeInUp4 w-full max-w-[900px] rounded-[20px] overflow-hidden DashboardPreviewGlow"
                     style={{
                         transform: `perspective(1200px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
                         transition: isHovering ? 'transform 0.12s ease-out' : 'transform 0.5s ease-out',
