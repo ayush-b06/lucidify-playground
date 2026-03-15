@@ -8,6 +8,7 @@ import { auth, db } from '../firebaseConfig';
 import Link from 'next/link';
 import { addDoc, collection, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import axios from "axios";
+import { useTheme } from '@/context/themeContext';
 
 // Sample avatar images (replace with your own images)
 const avatars = [
@@ -40,11 +41,17 @@ const avatars = [
 
 const SIGNUP_GETTINGSTARTEDHeroSection = () => {
   const router = useRouter();
+  const { setTheme } = useTheme();
+
+  // Force light mode on this page
+  useEffect(() => {
+    setTheme('light');
+  }, []);
   const [firstName, setFirstName] = useState<string>("");
+  const [bio, setBio] = useState<string>("");
   const [email, setEmail] = useState<string | null>(null);
   const [uid, setUid] = useState<string | null>(null);
   const [lastName, setLastName] = useState<string>("");
-  const [phoneNumber, setPhoneNumber] = useState<number | null>(null);
   const [companyName, setCompanyName] = useState<string>("");
   const [companyURL, setCompanyURL] = useState<string>("");
   const [companySize, setCompanySize] = useState<string>("");
@@ -73,10 +80,6 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
   // const [countries, setCountries] = useState<{ name: string; code: string }[]>([]);
   // const [states, setStates] = useState<string[]>([]);
   // const [country, setCountry] = useState<string>("");
-  const [selectedStateAbbv, setSelectedStateAbbv] = useState("");
-  const [selectedStateName, setSelectedStateName] = useState("");
-
-  const [city, setCity] = useState<string>("");
 
   const usStates = [
     { code: "INTL", name: "Other Country than USA" },
@@ -269,6 +272,15 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
   const handleMouseLeaveChallenge = () => {
     setHoveredChallenge(null);
   };
+  // Mark hidden sections as inert on mount so tab can't reach them
+  useEffect(() => {
+    const ids = ["SignUpSection2", "SignUpSection3", "SignUpSection4"];
+    ids.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute("inert", "");
+    });
+  }, []);
+
   // Redirect if the user is not authenticated or hasn't just signed up
   useEffect(() => {
     const checkAuth = async () => {
@@ -318,6 +330,13 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
       const section2 = document.getElementById("SignUpSection2");
       const section3 = document.getElementById("SignUpSection3");
       const section4 = document.getElementById("SignUpSection4");
+
+      // Update inert so off-screen sections can't be tabbed into
+      [section1, section2, section3, section4].forEach((el, i) => {
+        if (!el) return;
+        if (i + 1 === stepNumber) el.removeAttribute("inert");
+        else el.setAttribute("inert", "");
+      });
 
       if (stepNumber === 1) {
         // Check if section2 exists before accessing its properties
@@ -452,10 +471,10 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
 
     // Create the user profile doc
     await setDoc(userRef, {
-      email: email, // saved from signup
+      email: email,
       firstName,
       lastName,
-      phoneNumber,
+      bio: bio.trim() || "Hey! I'm a Lucidify Member 👋",
       companyName,
       companyURL,
       companySize,
@@ -466,9 +485,7 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
       selectedChallenges,
       customChallenge,
       selectedAvatar,
-      selectedStateName,
-      selectedStateAbbv,
-      setUp: true, // Mark as setup complete
+      setUp: true,
       createdAt: new Date(),
     });
 
@@ -515,7 +532,7 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
 
 
   return (
-    <div className="relative flex justify-center items-center min-h-screen BackgroundGradient overflow-hidden">
+    <div className="relative flex justify-center items-center min-h-screen BackgroundGradient FullPageBg overflow-hidden">
       {/* Left Decorative Image */}
       <div className="w-[25%] absolute left-[7%]  my-auto z-10" id={"SignUpSection1Pic1"}>
         <Image
@@ -568,37 +585,37 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
 
       <nav className="top-[40px] fixed flex px-[40px] py-[10px] bg-gradient-to-br from-[#d6ceff] via-white/100 to-[#d6ceff] ContentCardShadow  rounded-full">
         <div className="flex gap-[20px]">
-          <button className={`ButtonLessBoxShadow w-[160px] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${step >= 1 ? "opacity-100" : "opacity-80 pointer-events-none"} ${firstName && selectedStateAbbv && city && "opacity-100 ButtonDone"}`}
+          <button className={`ButtonLessBoxShadow w-[160px] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${step >= 1 ? "opacity-100" : "opacity-30 pointer-events-none"} ${firstName && "opacity-100 ButtonDone"}`}
             onClick={() => handleContinue(1)}  // Trigger transition
           >
             <div className="button__content rounded-[40px]">
               <div className="button__icon">
               </div>
-              <p className={`button__text ${firstName && selectedStateAbbv && city ? "text-black" : "text-[rgba(0,0,0,0.6)]"} `}>Profile</p>
+              <p className={`button__text ${firstName ? "text-black" : "text-[rgba(0,0,0,0.6)]"} `}>Profile</p>
             </div>
           </button>
 
-          <button className={`ButtonLessBoxShadow w-[180px] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${firstName && selectedStateAbbv && city ? "opacity-100" : "opacity-80 pointer-events-none"} ${companyName && companyURL && companySize && companyRole && "opacity-100 ButtonDone"}`}
+          <button className={`ButtonLessBoxShadow w-[180px] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${firstName ? "opacity-100" : "opacity-30 pointer-events-none"} ${companyName && companyURL && companySize && companyRole && "opacity-100 ButtonDone"}`}
             onClick={() => handleContinue(2)}  // Trigger transition
-            disabled={!firstName || !selectedStateAbbv || !city}>
+            disabled={!firstName}>
             <div className="button__content rounded-[40px]">
               <div className="button__icon">
               </div>
-              <p className={`button__text ${firstName && selectedStateAbbv && city ? "text-black" : "text-[rgba(0,0,0,0.6)]"} `}>Company</p>
+              <p className={`button__text ${firstName ? "text-black" : "text-[rgba(0,0,0,0.6)]"} `}>Company</p>
             </div>
           </button>
 
-          <button className={`ButtonLessBoxShadow w-[160px] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${firstName && selectedStateAbbv && city && section3Visited ? "opacity-100" : "opacity-80 pointer-events-none"} ${selectedServices.length > 0 && selectedChallenges.length > 0 && idealOutcome && "opacity-100 ButtonDone"}`}
+          <button className={`ButtonLessBoxShadow w-[160px] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${firstName && section3Visited ? "opacity-100" : "opacity-30 pointer-events-none"} ${selectedServices.length > 0 && selectedChallenges.length > 0 && idealOutcome && "opacity-100 ButtonDone"}`}
             onClick={() => handleContinue(3)}  // Trigger transition
-            disabled={!firstName || !selectedStateAbbv || !city || !section3Visited}>
+            disabled={!firstName || !section3Visited}>
             <div className="button__content rounded-[40px]">
               <div className="button__icon">
               </div>
-              <p className={`button__text ${firstName && selectedStateAbbv && city && section3Visited ? "text-black" : "text-[rgba(0,0,0,0.6)]"} `}>Vision</p>
+              <p className={`button__text ${firstName && section3Visited ? "text-black" : "text-[rgba(0,0,0,0.6)]"} `}>Vision</p>
             </div>
           </button>
 
-          <button className={`ButtonLessBoxShadow w-[190px] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${firstName && selectedStateAbbv && city && section3Visited ? "opacity-100" : "opacity-80 pointer-events-none"} ${selectedAvatar && "opacity-100 ButtonDone"}`}
+          <button className={`ButtonLessBoxShadow w-[190px] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${firstName && section3Visited ? "opacity-100" : "opacity-30 pointer-events-none"} ${selectedAvatar && "opacity-100 ButtonDone"}`}
             onClick={() => handleContinue(4)}  // Trigger transition
             disabled={selectedServices.length === 0 || selectedChallenges.length === 0 || !idealOutcome}>
             <div className="button__content rounded-[40px]">
@@ -667,118 +684,46 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
             <h3 className="text-start text-black text-[18px] font-medium mb-[10px]">Let&apos;s start with the basics</h3>
 
             <div className="flex flex-col gap-[10px]">
-              <div className="flex justify-between relative">
-
-                <div className="w-full flex flex-col items-start gap-[3px]">
-                  <h3 className="text-black text-[14px]">What&apos;s your first name?<span className="text-[#7160DE] font-bold text-[16px]">*</span></h3>
-                  <input
-                    type="text"
-                    placeholder="John"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full text-black bg-[rgba(255,255,255,0.10)] shadow-sm shadow-gray-400 rounded-lg p-2 pl-[12px] focus:outline-none focus:ring-1 focus:ring-[rgba(0,0,0,0.25)]"
-                    required
-                  />
-                </div>
-
-                <div className="hidden">
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex  flex-col gap-[5px]">
-                <div className="w-full flex flex-col items-start ">
-                  <h3 className="text-black text-[14px] mb-[3px]">Phone number</h3>
-                  <input
-                    type="number"
-                    placeholder="(123) 456-7890"
-                    value={phoneNumber ?? ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setPhoneNumber(value === "" ? null : Number(value));
-                    }}
-                    className="w-full text-black bg-[rgba(255,255,255,0.10)] shadow-sm shadow-gray-400 rounded-lg p-2 pl-[12px] focus:outline-none focus:ring-1 focus:ring-[rgba(0,0,0,0.25)]"
-                  />
-                </div>
-                <div className="text-black opacity-80 text-start text-[12px]">Not required, but better for communication.</div>
-              </div>
-
-              <div>
-                {/* Country Field
-              <div className="w-full flex flex-col items-start">
-                <h3 className="text-black text-[14px] mb-[3px]">Country<span className="text-[#7160DE] font-bold text-[16px]">*</span></h3>
-                <select
-                  value={country}
-                  onChange={(e) => {
-                    setCountry(e.target.value);
-                    setState(""); // Reset state when country changes
-                  }}
+              <div className="w-full flex flex-col items-start gap-[3px]">
+                <h3 className="text-black text-[14px]">What&apos;s your first name?<span className="text-[#7160DE] font-bold text-[16px]">*</span></h3>
+                <input
+                  type="text"
+                  placeholder="John"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   className="w-full text-black bg-[rgba(255,255,255,0.10)] shadow-sm shadow-gray-400 rounded-lg p-2 pl-[12px] focus:outline-none focus:ring-1 focus:ring-[rgba(0,0,0,0.25)]"
-                >
-                  <option value="">Select Country</option>
-                  {countries.map((country) => (
-                    <option key={country} value={country}>
-                      {country}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
+                  required
+                />
+              </div>
 
-                <div className="flex justify-between">
-                  {/* State Field */}
-                  <div className="w-[48%] flex flex-col items-start">
-                    <h3 className="text-black text-[14px] mb-[3px]">State/Province<span className="text-[#7160DE] font-bold text-[16px]">*</span></h3>
-                    <select
-                      value={selectedStateAbbv}
-                      onChange={handleStateChange}
-                      className="w-full text-black bg-[rgba(255,255,255,0.10)] shadow-sm shadow-gray-400 rounded-lg p-2 pl-[12px] focus:outline-none focus:ring-1 focus:ring-[rgba(0,0,0,0.25)]"
-                      required
-                    >
-                      <option value="">Select State/Province</option>
-                      {usStates.map((state) => (
-                        <option key={state.code} value={state.code}>
-                          {state.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* City Field */}
-                  <div className="w-[48%] flex flex-col items-start">
-                    <h3 className="text-black text-[14px] mb-[3px]">City<span className="text-[#7160DE] font-bold text-[16px]">*</span></h3>
-                    <input
-                      type="text"
-                      placeholder="Enter your city"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full text-black bg-[rgba(255,255,255,0.10)] shadow-sm shadow-gray-400 rounded-lg p-2 pl-[12px] focus:outline-none focus:ring-1 focus:ring-[rgba(0,0,0,0.25)]"
-                      required
-                    />
-                  </div>
-                </div>
+              <div className="w-full flex flex-col items-start gap-[3px]">
+                <h3 className="text-black text-[14px]">Bio <span className="text-black opacity-40 text-[13px] font-normal">(optional)</span></h3>
+                <textarea
+                  placeholder="Hey! I'm a Lucidify Member 👋"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={3}
+                  className="w-full text-black bg-[rgba(255,255,255,0.10)] shadow-sm shadow-gray-400 rounded-lg p-2 pl-[12px] focus:outline-none focus:ring-1 focus:ring-[rgba(0,0,0,0.25)] resize-none"
+                />
+                <div className="text-black opacity-50 text-[12px]">This shows on your profile. Leave blank to use the default.</div>
               </div>
             </div>
 
 
             {/* <button
-              className={`w-full ${firstName && selectedStateAbbv && city ? "text-white" : "text-[rgba(0,0,0,0.5)]"} py-2 mt-4 rounded-lg bg-${firstName && selectedStateAbbv && city ? "[#725CF7]" : "[rgba(114,92,247,0.5)]"} shadow-lg shadow-indigo-300 ${firstName && selectedStateAbbv && city && "hover:bg-[#5D3AEA]"}`}
+              className={`w-full ${firstName ? "text-white" : "text-[rgba(0,0,0,0.5)]"} py-2 mt-4 rounded-lg bg-${firstName ? "[#725CF7]" : "[rgba(114,92,247,0.5)]"} shadow-lg shadow-indigo-300 ${firstName && "hover:bg-[#5D3AEA]"}`}
               onClick={() => handleContinue(2)}  // Trigger transition
-              disabled={!firstName || !selectedStateAbbv || !city}
+              disabled={!firstName}
             >
               Continue
             </button> */}
-            <button className={`w-full button h-[50px] rounded-[40px] ${firstName && selectedStateAbbv && city ? "opacity-100" : "opacity-80 pointer-events-none"} mt-[26px]`}
+            <button className={`w-full button h-[50px] rounded-[40px] ${firstName ? "opacity-100" : "opacity-30 pointer-events-none"} mt-[26px]`}
               onClick={() => handleContinue(2)}  // Trigger transition
-              disabled={!firstName || !selectedStateAbbv || !city}                >
+              disabled={!firstName}>
               <div className="button__content rounded-[40px]">
                 <div className="button__icon">
                 </div>
-                <p className={`button__text ${firstName && selectedStateAbbv && city ? "text-black" : "text-[rgba(0,0,0,0.6)]"} `}>Continue</p>
+                <p className={`button__text ${firstName ? "text-black" : "text-[rgba(0,0,0,0.6)]"} `}>Continue</p>
               </div>
             </button>
           </div>
@@ -921,56 +866,28 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
               </div>
             </div>
 
-            <div className="flex flex-col gap-[5px] mt-[26px]">
-              <div className="flex justify-between">
-                <button className={`w-[35%] button h-[50px] rounded-[20px] border-solid border-r-[1px] border-[#a5b4fcc4]`}
-                  onClick={() => handleContinue(1)}  // Trigger transition
-                >
-                  <div className="button__content rounded-[20px]">
-                    <p className={`button__text text-black `}>Back</p>
-                  </div>
-                </button>
-                <button className={`w-[42%] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${companyName && companyURL && companySize && companyRole ? "opacity-100" : "opacity-80 pointer-events-none"}`}
-                  onClick={() => handleContinue(3)}  // Trigger transition
-                  disabled={!companyName || !companyURL || !companySize || !companyRole}>
-                  <div className="button__content rounded-[40px]">
-                    <p className={`button__text ${companyName && companyURL && companySize && companyRole ? "text-black" : "text-[rgba(0,0,0,0.6)]"} `}>Continue</p>
-                  </div>
-                </button>
-                {/* <button
-                  className={`w-[35%] hover:-translate-y-[3px] hover:-translate-x-[2px] hover:scale-[101%] hover:shadow-xl hover:shadow-indigo-300 text-white py-2 mt-4 rounded-lg bg-[rgba(0,0,0,0.6)] shadow-lg shadow-indigo-300 "hover:bg-[#5D3AEA]"`}
-                  onClick={() => handleContinue(3)}  // Trigger transition
-                  disabled={!firstName || !selectedStateAbbv || !city}
-                >
-                  Back
-                </button> */}
-                {/* <button
-                  className={`w-[42%] hover:-translate-y-[3px] hover:translate-x-[2px] hover:scale-[101%] hover:shadow-xl hover:shadow-indigo-300 ${firstName && selectedStateAbbv && city ? "text-white" : "text-[rgba(0,0,0,0.5)]"} py-2 mt-4 rounded-lg bg-${firstName && selectedStateAbbv && city ? "[#725CF7]" : "[rgba(114,92,247,0.5)]"} shadow-lg shadow-indigo-300 ${firstName && selectedStateAbbv && city && "hover:bg-[#5D3AEA]"}`}
-                  onClick={() => handleContinue(3)}  // Trigger transition
-                  disabled={!firstName || !selectedStateAbbv || !city}
-                >
-                  Continue
-                </button> */}
-              </div>
-              <div className="w-full flex justify-end mt-[10px]">
-                <button
-                  className={`text-black`}
-                  onClick={() => handleContinue(3)}  // Trigger transition
-                >
-                  <div className="flex items-center gap-[5px] hover:translate-x-[3px] SkipText mr-[10px]">
-                    <h1 className="text-[14px]">Skip for now</h1>
-                    <div className="w-[15px] SkipArrow">
-                      <Image
-                        src="/Black Full Right Arrow.png"
-                        alt="Rocket Decorative Image"
-                        layout="responsive"
-                        width={0}
-                        height={0}
-                      />
-                    </div>
-                  </div>
-                </button>
-              </div>
+            <div className="flex justify-between items-center mt-[26px] gap-[12px]">
+              <button className={`w-[25%] button h-[50px] rounded-[20px] border-solid border-r-[1px] border-[#a5b4fcc4]`}
+                onClick={() => handleContinue(1)}
+              >
+                <div className="button__content rounded-[20px]">
+                  <p className={`button__text text-black`}>Back</p>
+                </div>
+              </button>
+              <button
+                onClick={() => handleContinue(3)}
+                className="GetStartedSkipBtn w-[30%] h-[50px] rounded-[40px] flex items-center justify-center gap-[8px] border border-dashed border-white/40 bg-white/10 hover:bg-white/20 transition-colors duration-150 text-white text-[15px] font-medium backdrop-blur-sm"
+              >
+                Skip for now
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button className={`w-[40%] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${companyName && companyURL && companySize && companyRole ? "opacity-100" : "opacity-30 pointer-events-none"}`}
+                onClick={() => handleContinue(3)}
+                disabled={!companyName || !companyURL || !companySize || !companyRole}>
+                <div className="button__content rounded-[40px]">
+                  <p className={`button__text ${companyName && companyURL && companySize && companyRole ? "text-black" : "text-[rgba(0,0,0,0.6)]"}`}>Continue</p>
+                </div>
+              </button>
             </div>
           </div>
 
@@ -1139,38 +1056,28 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
             </div>
 
 
-            <div className="flex flex-col gap-[5px] mt-[26px]">
-              <div className="flex justify-between">
-                <button className={`w-[17%] button h-[50px] rounded-[20px] border-solid border-r-[1px] border-[#a5b4fcc4]`}
-                  onClick={() => handleContinue(2)}  // Trigger transition
-                >
-                  <div className="button__content rounded-[20px]">
-                    <p className={`button__text text-black `}>Back</p>
-                  </div>
-                </button>
-                <button className={`w-[21%] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${selectedServices.length > 0 && selectedChallenges.length > 0 && idealOutcome ? "opacity-100" : "opacity-80 pointer-events-none"}`}
-                  onClick={() => handleContinue(4)}  // Trigger transition
-                  disabled={selectedServices.length === 0 || selectedChallenges.length === 0 || !idealOutcome}>
-                  <div className="button__content rounded-[40px]">
-                    <p className={`button__text ${selectedServices.length > 0 && selectedChallenges.length > 0 && idealOutcome ? "text-black" : "text-[rgba(0,0,0,0.6)]"} `}>Continue</p>
-                  </div>
-                </button>
-                {/* <button
-                  className={`w-[35%] hover:-translate-y-[3px] hover:-translate-x-[2px] hover:scale-[101%] hover:shadow-xl hover:shadow-indigo-300 text-white py-2 mt-4 rounded-lg bg-[rgba(0,0,0,0.6)] shadow-lg shadow-indigo-300 "hover:bg-[#5D3AEA]"`}
-                  onClick={() => handleContinue(3)}  // Trigger transition
-                  disabled={!firstName || !selectedStateAbbv || !city}
-                >
-                  Back
-                </button> */}
-                {/* <button
-                  className={`w-[42%] hover:-translate-y-[3px] hover:translate-x-[2px] hover:scale-[101%] hover:shadow-xl hover:shadow-indigo-300 ${firstName && selectedStateAbbv && city ? "text-white" : "text-[rgba(0,0,0,0.5)]"} py-2 mt-4 rounded-lg bg-${firstName && selectedStateAbbv && city ? "[#725CF7]" : "[rgba(114,92,247,0.5)]"} shadow-lg shadow-indigo-300 ${firstName && selectedStateAbbv && city && "hover:bg-[#5D3AEA]"}`}
-                  onClick={() => handleContinue(3)}  // Trigger transition
-                  disabled={!firstName || !selectedStateAbbv || !city}
-                >
-                  Continue
-                </button> */}
-              </div>
-
+            <div className="flex justify-between items-center mt-[26px] gap-[12px]">
+              <button className={`w-[17%] button h-[50px] rounded-[20px] border-solid border-r-[1px] border-[#a5b4fcc4]`}
+                onClick={() => handleContinue(2)}
+              >
+                <div className="button__content rounded-[20px]">
+                  <p className={`button__text text-black`}>Back</p>
+                </div>
+              </button>
+              <button
+                onClick={() => handleContinue(4)}
+                className="GetStartedSkipBtn w-[30%] h-[50px] rounded-[40px] flex items-center justify-center gap-[8px] border border-dashed border-white/40 bg-white/10 hover:bg-white/20 transition-colors duration-150 text-white text-[15px] font-medium backdrop-blur-sm"
+              >
+                Skip for now
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button className={`w-[21%] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${selectedServices.length > 0 && selectedChallenges.length > 0 && idealOutcome ? "opacity-100" : "opacity-30 pointer-events-none"}`}
+                onClick={() => handleContinue(4)}
+                disabled={selectedServices.length === 0 || selectedChallenges.length === 0 || !idealOutcome}>
+                <div className="button__content rounded-[40px]">
+                  <p className={`button__text ${selectedServices.length > 0 && selectedChallenges.length > 0 && idealOutcome ? "text-black" : "text-[rgba(0,0,0,0.6)]"}`}>Continue</p>
+                </div>
+              </button>
             </div>
           </div>
 
@@ -1242,7 +1149,7 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
                     <p className={`button__text text-black `}>Back</p>
                   </div>
                 </button>
-                <button className={`w-[25%] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${selectedAvatar ? "opacity-100" : "opacity-80 pointer-events-none"}`}
+                <button className={`w-[25%] button h-[50px] rounded-[40px] border-solid border-l-[1px] border-[#a5b4fcc4] ${selectedAvatar ? "opacity-100" : "opacity-30 pointer-events-none"}`}
                   onClick={() => handleSubmit()}  // Trigger transition
                   disabled={!selectedAvatar}>
                   <div className="button__content rounded-[40px]">
@@ -1252,14 +1159,14 @@ const SIGNUP_GETTINGSTARTEDHeroSection = () => {
                 {/* <button
                   className={`w-[35%] hover:-translate-y-[3px] hover:-translate-x-[2px] hover:scale-[101%] hover:shadow-xl hover:shadow-indigo-300 text-white py-2 mt-4 rounded-lg bg-[rgba(0,0,0,0.6)] shadow-lg shadow-indigo-300 "hover:bg-[#5D3AEA]"`}
                   onClick={() => handleContinue(3)}  // Trigger transition
-                  disabled={!firstName || !selectedStateAbbv || !city}
+                  disabled={!firstName}
                 >
                   Back
                 </button> */}
                 {/* <button
-                  className={`w-[42%] hover:-translate-y-[3px] hover:translate-x-[2px] hover:scale-[101%] hover:shadow-xl hover:shadow-indigo-300 ${firstName && selectedStateAbbv && city ? "text-white" : "text-[rgba(0,0,0,0.5)]"} py-2 mt-4 rounded-lg bg-${firstName && selectedStateAbbv && city ? "[#725CF7]" : "[rgba(114,92,247,0.5)]"} shadow-lg shadow-indigo-300 ${firstName && selectedStateAbbv && city && "hover:bg-[#5D3AEA]"}`}
+                  className={`w-[42%] hover:-translate-y-[3px] hover:translate-x-[2px] hover:scale-[101%] hover:shadow-xl hover:shadow-indigo-300 ${firstName ? "text-white" : "text-[rgba(0,0,0,0.5)]"} py-2 mt-4 rounded-lg bg-${firstName ? "[#725CF7]" : "[rgba(114,92,247,0.5)]"} shadow-lg shadow-indigo-300 ${firstName && "hover:bg-[#5D3AEA]"}`}
                   onClick={() => handleContinue(3)}  // Trigger transition
-                  disabled={!firstName || !selectedStateAbbv || !city}
+                  disabled={!firstName}
                 >
                   Continue
                 </button> */}

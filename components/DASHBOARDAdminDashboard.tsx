@@ -1,4 +1,5 @@
 // AdminDashboard.tsx
+"use client";
 import { useEffect, useState } from 'react';
 import { getAuth } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
@@ -8,6 +9,7 @@ import DashboardAdminSideNav from './DashboardAdminSideNav';
 import Image from 'next/image';
 import Link from 'next/link';
 import DashboardTopBar from './DashboardTopBar';
+import { useTheme } from '@/context/themeContext';
 
 interface Project {
   uid: string;
@@ -29,6 +31,9 @@ const AdminDashboard = () => {
   const [firstName, setFirstName] = useState<string | null>(null);
   const auth = getAuth();
   const router = useRouter();
+  const { setTheme } = useTheme();
+
+  useEffect(() => { setTheme('light'); }, []);
 
   const getFormattedDate = () => {
     const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -109,7 +114,7 @@ const AdminDashboard = () => {
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-[30px] lg:px-[50px] py-[40px]">
           {/* Welcome */}
-          <div className="mb-[30px]">
+          <div className="DashboardPurpleCard mb-[30px] rounded-[24px] px-[30px] py-[24px]">
             <h1 className="text-[28px] font-semibold mb-[4px]">Welcome back, {firstName || 'Admin'}!</h1>
             <p className="text-[14px] font-light opacity-60">Today is {getFormattedDate()}</p>
           </div>
@@ -122,7 +127,7 @@ const AdminDashboard = () => {
               { label: 'Pending Approval', value: dataLoading ? '—' : pendingProjects, icon: '⏳', color: '#f59e0b' },
               { label: 'Active Projects', value: dataLoading ? '—' : activeProjects, icon: '✅', color: '#22c55e' },
             ].map((stat) => (
-              <div key={stat.label} className="BlackGradient ContentCardShadow rounded-[20px] px-[25px] py-[22px] flex flex-col gap-[10px]">
+              <div key={stat.label} className="DashboardPurpleCard ContentCardShadow rounded-[20px] px-[25px] py-[22px] flex flex-col gap-[10px]">
                 <div className="flex items-center justify-between">
                   <p className="text-[13px] font-light opacity-60">{stat.label}</p>
                   <span className="text-[18px]">{stat.icon}</span>

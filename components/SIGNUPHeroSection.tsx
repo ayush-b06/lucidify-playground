@@ -7,9 +7,11 @@ import { getAuth, GoogleAuthProvider, createUserWithEmailAndPassword, signInWith
 import { auth, db } from '../firebaseConfig';
 import Link from 'next/link';
 import { addDoc, collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from 'firebase/firestore';
+import { useTheme } from '@/context/themeContext';
 
 const SIGNUPHeroSection = () => {
   const router = useRouter();
+  const { setTheme } = useTheme();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [password2, setPassword2] = useState<string>("");
@@ -101,6 +103,11 @@ const SIGNUPHeroSection = () => {
 
 
 
+  // Force light mode on this page
+  useEffect(() => {
+    setTheme('light');
+  }, []);
+
   // Handle the result of Google redirect sign-up
   useEffect(() => {
     const fetchRedirectResult = async () => {
@@ -180,7 +187,7 @@ const SIGNUPHeroSection = () => {
 
 
   return (
-    <div className="relative flex justify-center items-center min-h-screen BackgroundGradient overflow-clip px-4">
+    <div className="relative flex justify-center items-center min-h-screen BackgroundGradient FullPageBg overflow-clip px-4">
       {/* Left Decorative Image */}
       <div className="hidden lg:block w-[18%] absolute left-[10%] top-[27%] my-auto z-10">
         <Image

@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef, useState } from 'react';
 import { getAuth } from 'firebase/auth';
 import {
@@ -16,9 +18,9 @@ import {
 import { auth, db } from '../firebaseConfig';
 import { writeNotification } from '../utils/notifications';
 import Image from 'next/image';
-import Link from 'next/link';
 import DashboardAdminSideNav from './DashboardAdminSideNav';
 import DashboardTopBar from './DashboardTopBar';
+import { useTheme } from '@/context/themeContext';
 
 // Types
 interface Conversation {
@@ -56,6 +58,15 @@ const DASHBOARDAdminMessages: React.FC = () => {
     const [newMessage, setNewMessage] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
+    const { setTheme } = useTheme();
+    const unsubscribeRef = useRef<(() => void) | null>(null);
+
+    useEffect(() => { setTheme('light'); }, []);
+
+    // Clean up listener on unmount
+    useEffect(() => {
+        return () => { if (unsubscribeRef.current) unsubscribeRef.current(); };
+    }, []);
 
     useEffect(() => {
         const fetchConversations = async () => {
@@ -119,19 +130,24 @@ const DASHBOARDAdminMessages: React.FC = () => {
         fetchConversations();
     }, []);
 
-    const fetchMessages = async (userId: string, conversationId: string) => {
+    const fetchMessages = (userId: string, conversationId: string) => {
+        // Clean up the previous listener before starting a new one
+        if (unsubscribeRef.current) {
+            unsubscribeRef.current();
+            unsubscribeRef.current = null;
+        }
+
+        setMessages([]);
         const messagesRef = collection(db, 'users', userId, 'conversations', conversationId, 'messages');
         const q = query(messagesRef, orderBy('timestamp', 'asc'));
 
-        const unsubscribe = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
+        unsubscribeRef.current = onSnapshot(q, (snapshot: QuerySnapshot<DocumentData>) => {
             const fetchedMessages: Message[] = snapshot.docs.map((doc) => ({
                 id: doc.id,
                 ...(doc.data() as Omit<Message, 'id'>),
             }));
             setMessages(fetchedMessages);
         });
-
-        return () => unsubscribe();
     };
 
     const handleChatSelect = async (conversation: Conversation) => {

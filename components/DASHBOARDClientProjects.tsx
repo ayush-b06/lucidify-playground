@@ -152,7 +152,7 @@ const DASHBOARDClientProjects = () => {
                             style={{ background: cardBg, border: cardBorder }}>
                             <div className="text-[44px] opacity-20">📂</div>
                             <p className="text-[15px] font-medium opacity-40">No projects yet</p>
-                            <p className="text-[13px] opacity-30 mb-[4px]">Click "New project" above to get started.</p>
+                            <p className="text-[13px] opacity-30 mb-[4px]">Click &quot;New project&quot; above to get started.</p>
                             <button
                                 onClick={toggleCreateProjectPopup}
                                 className="mt-[4px] px-[20px] h-[40px] rounded-[12px] text-[13px] font-medium text-white transition-opacity hover:opacity-85"

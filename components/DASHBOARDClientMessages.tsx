@@ -12,6 +12,7 @@ import DashboardClientSideNav from './DashboardClientSideNav';
 import Image from 'next/image';
 import AddDirectMessageModal from './AddDirectMessageModal';
 import DashboardTopBar from './DashboardTopBar';
+import { useTheme } from '@/context/themeContext';
 
 interface Message {
     id: string;
@@ -35,6 +36,8 @@ interface ConvoItem {
 
 const DASHBOARDClientMessages = () => {
     const authInstance = getAuth();
+    const { setTheme } = useTheme();
+    useEffect(() => { setTheme('light'); }, []);
 
     const [convos, setConvos] = useState<ConvoItem[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -197,7 +200,7 @@ const DASHBOARDClientMessages = () => {
         });
 
         return () => unsub();
-    }, [selectedId, authInstance]);
+    }, [selectedId, authInstance, convos]);
 
     // ── Auto-scroll to latest message ─────────────────────────────────────────
     useEffect(() => {

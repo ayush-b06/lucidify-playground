@@ -10,14 +10,22 @@ import {
     signInWithEmailAndPassword,
     onAuthStateChanged,
 } from "firebase/auth";
-import { auth } from '../firebaseConfig';
+import { auth, db } from '../firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
+import { useTheme } from '@/context/themeContext';
 
 const LOGINHeroSection = () => {
     const router = useRouter();
+    const { setTheme } = useTheme();
     const [email, setEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [error, setError] = useState<string | null>(null);
+
+    // Force light mode on this page
+    useEffect(() => {
+        setTheme('light');
+    }, []);
 
     // Redirect to dashboard if already logged in
     useEffect(() => {
@@ -37,9 +45,15 @@ const LOGINHeroSection = () => {
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
             if (result.user) {
-                router.push("/dashboard");
-            } else {
-                console.log("User sign-in failed or was cancelled.");
+                const userRef = doc(db, "users", result.user.uid);
+                const docSnap = await getDoc(userRef);
+                if (docSnap.exists()) {
+                    router.push("/dashboard");
+                } else {
+                    sessionStorage.setItem("signupEmail", result.user.email || "");
+                    sessionStorage.setItem("signupUid", result.user.uid);
+                    router.push("/signup/get-started");
+                }
             }
         } catch (error) {
             console.error("Google Sign-In Error:", error);
@@ -61,7 +75,7 @@ const LOGINHeroSection = () => {
     };
 
     return (
-        <div className="relative flex justify-center items-center min-h-screen BackgroundGradient px-4">
+        <div className="relative flex justify-center items-center min-h-screen BackgroundGradient FullPageBg px-4">
             {/* Left Decorative Image */}
             <div className="hidden lg:block w-[25%] absolute left-[170px] my-auto z-0">
                 <Image
@@ -183,7 +197,8 @@ const LOGINHeroSection = () => {
 
                     <button
                         type="submit"
-                        className="w-full text-white py-2 rounded-lg bg-[#725CF7] shadow-lg shadow-indigo-300 hover:bg-[#5D3AEA] mb-[40px]"
+                        disabled={!email || !password}
+                        className={`w-full py-2 rounded-lg mb-[40px] shadow-lg shadow-indigo-300 ${!email || !password ? 'bg-[rgba(114,92,247,0.5)] text-[rgba(0,0,0,0.5)]' : 'bg-[#725CF7] text-white hover:bg-[#5D3AEA]'}`}
                     >
                         Sign In
                     </button>

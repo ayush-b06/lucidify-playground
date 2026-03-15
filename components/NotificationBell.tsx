@@ -5,6 +5,7 @@ import { collection, doc, onSnapshot, orderBy, query, updateDoc, writeBatch } fr
 import { auth, db } from '../firebaseConfig';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useTheme } from '@/context/themeContext';
 
 interface Notification {
     id: string;
@@ -30,6 +31,8 @@ const NotificationBell = () => {
     const [isOpen, setIsOpen] = useState(false);
     const popupRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+    const { theme } = useTheme();
+    const isLight = theme === 'light';
 
     useEffect(() => {
         const user = auth.currentUser;
@@ -104,7 +107,7 @@ const NotificationBell = () => {
                     </div>
                 )}
                 <div className="w-[22px] sm:w-[25px]">
-                    <Image src="/Notification Bell Icon.png" alt="Notifications" layout="responsive" width={0} height={0} />
+                    <Image src={isLight ? "/Black Notification Bell Icon.png" : "/Notification Bell Icon.png"} alt="Notifications" layout="responsive" width={0} height={0} />
                 </div>
             </button>
 
